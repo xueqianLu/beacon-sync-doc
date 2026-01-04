@@ -1,0 +1,91 @@
+# Jekyll configuration for GitHub Pages
+
+# Site settings
+title: "Beacon Node 同步模块详解"
+description: "深入解析以太坊Beacon节点同步机制 - 基于Prysm实现"
+author: "luxq"
+email: your-email@example.com
+
+# GitHub repository
+repository: luxq/beaconsync
+
+# Build settings
+markdown: kramdown
+theme: jekyll-theme-cayman
+
+# Kramdown settings
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: true
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-relative-links
+
+# Relative links
+relative_links:
+  enabled: true
+  collections: true
+
+# Collections
+collections:
+  chapters:
+    output: true
+    permalink: /:collection/:name
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .bundle
+  - .sass-cache
+  - _site
+  - Prysm_Beacon.md
+  - beacon_node_sync_documentation.md
+
+# Include
+include:
+  - _pages
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+      
+# Navigation
+navigation:
+  - title: 首页
+    url: /
+  - title: 目录大纲
+    url: /beacon_sync_outline
+  - title: 代码参考
+    url: /code_references
+  - title: 进度报告
+    url: /PROGRESS
+
+# Google Analytics (optional)
+# google_analytics: UA-XXXXXXXXX-X
+
+# Social links (optional)
+# github_username: luxq
+# twitter_username: your_twitter
+
+# Show/hide sections
+show_downloads: true
+show_excerpts: false
+
+# Timezone
+timezone: Asia/Shanghai
+
+# Language
+lang: zh-CN
