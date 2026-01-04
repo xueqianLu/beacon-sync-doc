@@ -11,7 +11,7 @@
 
 ## 📚 在线阅读
 
-**GitHub Pages**: [https://luxq.github.io/beaconsync/](https://luxq.github.io/beaconsync/)
+**GitHub Pages**: [https://xueqianLu.github.io/beacon-sync-doc/](https://xueqianLu.github.io/beacon-sync-doc/)
 
 ---
 
