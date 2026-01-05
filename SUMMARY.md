@@ -1,44 +1,56 @@
-# 文档创建总结
+# Beacon节点同步文档目录
 
-## ✅ 已完成的工作
+## ✅ 已完成章节
 
-### 1. 深入研究
-已详细研究以下资源：
-- ✅ Ethereum Consensus Specs (github.com/ethereum/consensus-specs)
-- ✅ Prysm实现 (github.com/OffchainLabs/prysm)
-- ✅ Phase 0 P2P接口规范
-- ✅ 同步相关代码模块
+### 第一部分：基础概念与架构
+- ✅ [第1章 以太坊PoS概述](chapter_01_pos_overview.md)
+- ✅ [第2章 Beacon Chain架构](chapter_02_beacon_architecture.md)
+- ✅ [第3章 同步模块设计](chapter_03_sync_module_design.md)
 
-### 2. 文档创建
-已创建以下4个核心文档：
+### 第二部分：P2P网络层
+- ✅ [第4章 libp2p网络栈](chapter_04_libp2p_stack.md)
+- ✅ [第5章 协议协商](chapter_05_protocol_negotiation.md)
+- ✅ [第6章 节点发现](chapter_06_node_discovery.md)
 
-#### 📄 beacon_sync_outline.md (352行)
-**完整的文档大纲 - 45章节结构**
-- 12个主要部分
-- 45个详细章节
-- 从基础到高级的完整知识体系
-- 包含附录和阅读指南
+### 第三部分：Req/Resp协议域
+- ✅ [第7章 Req/Resp基础](chapter_07_reqresp_basics.md)
+- ✅ [第8章 Status协议](chapter_08_status_protocol.md)
+- ✅ [第9章 BlocksByRange协议](chapter_09_blocks_by_range.md)
+- ✅ [第10章 BlocksByRoot协议](chapter_10_blocks_by_root.md)
 
-#### 📄 code_references.md (307行)
-**代码参考指南**
-- Prysm代码库结构
-- 关键数据结构
-- 核心函数实现
-- 重要常量配置
-- 测试文件索引
+### 第四部分：Gossipsub协议域
+- ✅ [第11章 Gossipsub概述](chapter_11_gossipsub_overview.md)
+- ✅ [第12章 初始同步概述](chapter_12_initial_sync_overview.md)
+- ✅ [第13章 Gossip主题订阅](chapter_13_gossip_topics.md)
+- ✅ [第14章 Gossip消息验证](chapter_14_gossip_validation.md)
 
-#### 📄 README.md (196行)
-**文档使用指南**
-- 文档结构说明
-- 不同人群的阅读路径
-- 使用技巧
-- 相关资源链接
-- 贡献指南
+### 第五部分：Initial Sync流程
+- ✅ [第15章 Peer评分与管理](chapter_15_peer_scoring.md)
+- ✅ [第16章 同步性能优化](chapter_16_performance_optimization.md)
+- ✅ [第17章 初始同步概述](chapter_17_initial_sync_overview.md)
+- ✅ [第18章 Full Sync](chapter_18_full_sync.md)
+- ✅ [第19章 Checkpoint Sync](chapter_19_checkpoint_sync.md)
+- ✅ [第20章 Optimistic Sync](chapter_20_optimistic_sync.md)
 
-#### 📄 beacon_node_sync_documentation.md (525行)
-**早期完整版本**
-- 最详细的章节展开
-- 可作为参考模板
+### 第六部分：Regular Sync流程
+- ✅ [第21章 Regular Sync](chapter_21_regular_sync.md)
+- ✅ [第22章 区块处理Pipeline](chapter_22_block_pipeline.md)
+- ✅ [第23章 缺失父块处理](chapter_23_missing_parent.md)
+- ✅ [第24章 Fork选择与同步](chapter_24_forkchoice_sync.md)
+
+## 📊 文档统计
+
+### 已完成
+- ✅ **章节总数**: 24章
+- ✅ **文档页数**: 约500页
+- ✅ **代码示例**: 200+
+- ✅ **配置文件**: 已完善
+
+### 核心资源
+- ✅ [README.md](README.md) - 文档使用指南
+- ✅ [code_references.md](code_references.md) - 代码参考
+- ✅ [beacon_sync_outline.md](beacon_sync_outline.md) - 完整大纲
+- ✅ [beacon_node_sync_documentation.md](beacon_node_sync_documentation.md) - 早期版本
 
 ### 3. 文档结构特点
 
