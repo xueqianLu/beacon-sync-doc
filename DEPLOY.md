@@ -324,7 +324,7 @@ tree _site
 # _config.yml
 title: "Beacon Node 同步模块详解"
 description: "深入解析以太坊Beacon节点同步机制"
-author: "luxq"
+author: "xueqianLu"
 lang: zh-CN
 
 # 社交媒体

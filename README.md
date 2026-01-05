@@ -1,6 +1,6 @@
 # Beacon Node 同步模块详解
 
-[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://luxq.github.io/beaconsync/)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://xueqianLu.github.io/beaconsync/)
 [![Progress](https://img.shields.io/badge/Progress-28.9%25-green)](./PROGRESS.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
@@ -74,13 +74,13 @@
 
 ### 在线阅读（推荐）
 
-访问 [GitHub Pages](https://luxq.github.io/beaconsync/) 在线阅读。
+访问 [GitHub Pages](https://xueqianLu.github.io/beaconsync/) 在线阅读。
 
 ### 本地阅读
 
 ```bash
 # 克隆仓库
-git clone https://github.com/luxq/beaconsync.git
+git clone https://github.com/xueqianLu/beaconsync.git
 cd beaconsync
 
 # 使用Markdown阅读器打开任意章节
@@ -160,7 +160,7 @@ bundle exec jekyll serve
 
 ## 🔗 相关链接
 
-- **在线文档**: [https://luxq.github.io/beaconsync/](https://luxq.github.io/beaconsync/)
+- **在线文档**: [https://xueqianLu.github.io/beaconsync/](https://xueqianLu.github.io/beaconsync/)
 - **Prysm**: [https://docs.prylabs.network/](https://docs.prylabs.network/)
 - **共识规范**: [https://github.com/ethereum/consensus-specs](https://github.com/ethereum/consensus-specs)
 - **libp2p**: [https://docs.libp2p.io/](https://docs.libp2p.io/)
@@ -175,7 +175,7 @@ bundle exec jekyll serve
 
 ## 📧 联系方式
 
-- **Issues**: [GitHub Issues](https://github.com/luxq/beaconsync/issues)
+- **Issues**: [GitHub Issues](https://github.com/xueqianLu/beaconsync/issues)
 - **Email**: your-email@example.com
 
 ---

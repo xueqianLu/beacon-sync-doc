@@ -35,7 +35,7 @@
 - [ ] 修改 `repository` 为你的仓库名（格式：username/repo）
 
 ### README.md
-- [ ] 将所有 `luxq` 替换为你的GitHub用户名
+- [ ] 将所有 `xueqianLu` 替换为你的GitHub用户名
 - [ ] 将所有 `beaconsync` 替换为你的仓库名
 - [ ] 修改邮箱地址
 - [ ] 检查所有链接是否正确

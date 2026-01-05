@@ -4,7 +4,7 @@
 
 ## 核心维护者
 
-- [@luxq](https://github.com/luxq) - 项目创建者和主要维护者
+- [@xueqianLu](https://github.com/xueqianLu) - 项目创建者和主要维护者
 
 ## 贡献者
 

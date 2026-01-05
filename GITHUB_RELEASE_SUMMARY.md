@@ -175,7 +175,7 @@ git push -u origin main
    - `email`: 你的邮箱
 
 2. **README.md**
-   - 所有 `luxq` → 你的用户名
+   - 所有 `xueqianLu` → 你的用户名
    - 所有 `beaconsync` → 你的仓库名（如果不同）
    - 邮箱地址
 

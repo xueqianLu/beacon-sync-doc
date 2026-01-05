@@ -26,7 +26,7 @@
 
 如果你发现文档中的问题或有疑问：
 
-1. 搜索现有的 [Issues](https://github.com/luxq/beaconsync/issues)
+1. 搜索现有的 [Issues](https://github.com/xueqianLu/beaconsync/issues)
 2. 如果没有类似问题，创建新 Issue
 3. 使用清晰的标题和描述
 4. 提供必要的上下文信息
@@ -43,7 +43,7 @@ git clone https://github.com/YOUR_USERNAME/beaconsync.git
 cd beaconsync
 
 # 3. 添加上游仓库
-git remote add upstream https://github.com/luxq/beaconsync.git
+git remote add upstream https://github.com/xueqianLu/beaconsync.git
 
 # 4. 创建新分支
 git checkout -b feature/your-feature-name

@@ -7,7 +7,7 @@ title: 首页
 
 > 深入解析以太坊Beacon节点同步机制 - 基于Prysm实现
 
-[![GitHub](https://img.shields.io/badge/GitHub-beaconsync-blue?logo=github)](https://github.com/luxq/beaconsync)
+[![GitHub](https://img.shields.io/badge/GitHub-beaconsync-blue?logo=github)](https://github.com/xueqianLu/beaconsync)
 [![Progress](https://img.shields.io/badge/Progress-28.9%25-green)](./PROGRESS.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
 
@@ -179,7 +179,7 @@ title: 首页
 
 ## 📧 联系方式
 
-- GitHub Issues: [提交问题](https://github.com/luxq/beaconsync/issues)
+- GitHub Issues: [提交问题](https://github.com/xueqianLu/beaconsync/issues)
 - Email: your-email@example.com
 
 ---
@@ -188,7 +188,7 @@ title: 首页
 
 如果这个项目对你有帮助，请给它一个 ⭐️！
 
-[![Star History](https://img.shields.io/github/stars/luxq/beaconsync?style=social)](https://github.com/luxq/beaconsync/stargazers)
+[![Star History](https://img.shields.io/github/stars/xueqianLu/beaconsync?style=social)](https://github.com/xueqianLu/beaconsync/stargazers)
 
 ---
 
