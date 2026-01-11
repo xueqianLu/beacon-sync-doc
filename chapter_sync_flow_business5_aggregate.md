@@ -31,4 +31,4 @@
 
 ### B5 Aggregate Receive & Validate（接收与验证） {#b5-aggregate-receive-validate}
 
-![B5 Aggregate Receive and Validate](img/business5_agg_receive_and_validate.png)
+![B5 Aggregate Receive and Validate](img/business5_agg_receive_validate.png)
