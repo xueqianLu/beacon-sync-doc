@@ -26,7 +26,7 @@
 
 如果你发现文档中的问题或有疑问：
 
-1. 搜索现有的 [Issues](https://github.com/xueqianLu/beaconsync/issues)
+1. 搜索现有的 [Issues](https://github.com/xueqianLu/beacon-sync-doc/issues)
 2. 如果没有类似问题，创建新 Issue
 3. 使用清晰的标题和描述
 4. 提供必要的上下文信息
@@ -39,11 +39,11 @@
 # 1. Fork 本仓库到你的账号
 
 # 2. Clone 你的 fork
-git clone https://github.com/YOUR_USERNAME/beaconsync.git
-cd beaconsync
+git clone https://github.com/YOUR_USERNAME/beacon-sync-doc.git
+cd beacon-sync-doc
 
 # 3. 添加上游仓库
-git remote add upstream https://github.com/xueqianLu/beaconsync.git
+git remote add upstream https://github.com/xueqianLu/beacon-sync-doc.git
 
 # 4. 创建新分支
 git checkout -b feature/your-feature-name

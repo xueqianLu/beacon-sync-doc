@@ -222,7 +222,7 @@
 ## 📚 文档结构
 
 ```
-beaconsync/
+beacon-sync-doc/
 ├── README.md                    # 项目介绍
 ├── SUMMARY.md                   # 章节目录
 ├── index.md                     # GitHub Pages首页
@@ -478,8 +478,8 @@ in the Software without restriction...
 
 ## 📞 联系我们
 
-- **GitHub**: [github.com/xueqianLu/beaconsync](https://github.com/xueqianLu/beaconsync)
-- **在线阅读**: [xueqianLu.github.io/beaconsync](https://xueqianLu.github.io/beaconsync)
+- **GitHub**: [github.com/xueqianLu/beacon-sync-doc](https://github.com/xueqianLu/beacon-sync-doc)
+- **在线阅读**: [xueqianLu.github.io/beacon-sync-doc](https://xueqianLu.github.io/beacon-sync-doc)
 - **Email**: your-email@example.com
 
 ---

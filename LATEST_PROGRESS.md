@@ -89,7 +89,7 @@
 
 ### 已完成的主要部分
 ```
-beaconsync/
+beacon-sync-doc/
 ├── 第一部分: 基础概念与架构 (3章) ✅
 ├── 第二部分: P2P网络层 (3章) ✅
 ├── 第三部分: Req/Resp协议域 (4章) ✅
@@ -205,8 +205,8 @@ beaconsync/
 
 **下次更新**: 待第七部分完成后
 
-**文档仓库**: [GitHub - beaconsync](https://github.com/xueqianLu/beaconsync)
-**在线阅读**: [GitHub Pages](https://xueqianLu.github.io/beaconsync)
+**文档仓库**: [GitHub - beacon-sync-doc](https://github.com/xueqianLu/beacon-sync-doc)
+**在线阅读**: [GitHub Pages](https://xueqianLu.github.io/beacon-sync-doc)
 
 ---
 

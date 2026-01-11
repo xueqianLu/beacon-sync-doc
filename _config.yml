@@ -4,10 +4,10 @@
 title: "Beacon Node 同步模块详解"
 description: "深入解析以太坊Beacon节点同步机制 - 基于Prysm实现"
 author: "xueqianLu"
-email: your-email@example.com
+email: xueqian1991@gmail.com
 
 # GitHub repository
-repository: xueqianLu/beaconsync
+repository: xueqianLu/beacon-sync-doc
 
 # Build settings
 markdown: kramdown
@@ -61,7 +61,7 @@ defaults:
       path: ""
     values:
       layout: default
-      
+
 # Navigation
 navigation:
   - title: 首页

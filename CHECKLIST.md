@@ -36,7 +36,7 @@
 
 ### README.md
 - [ ] 将所有 `xueqianLu` 替换为你的GitHub用户名
-- [ ] 将所有 `beaconsync` 替换为你的仓库名
+- [ ] 将所有 `beacon-sync-doc` 替换为你的仓库名
 - [ ] 修改邮箱地址
 - [ ] 检查所有链接是否正确
 
@@ -85,7 +85,7 @@ git config user.email "your-email@example.com"
 ### 初始化仓库
 ```bash
 # 如果还没有初始化
-cd /path/to/beaconsync
+cd /path/to/beacon-sync-doc
 git init
 
 # 添加所有文件
@@ -110,7 +110,7 @@ git commit -m "Initial commit: Beacon Node sync documentation"
 1. 登录 GitHub
 2. 点击右上角 `+` → `New repository`
 3. 填写信息：
-   - Repository name: `beaconsync`（或你的名字）
+   - Repository name: `beacon-sync-doc`（或你的名字）
    - Description: "深入解析以太坊Beacon节点同步机制"
    - Public（推荐）或 Private
    - **不要**选择 "Initialize with README"（我们已有）
@@ -119,7 +119,7 @@ git commit -m "Initial commit: Beacon Node sync documentation"
 ### 推送代码
 ```bash
 # 添加远程仓库
-git remote add origin https://github.com/YOUR_USERNAME/beaconsync.git
+git remote add origin https://github.com/YOUR_USERNAME/beacon-sync-doc.git
 
 # 推送到main分支
 git branch -M main
@@ -143,7 +143,7 @@ git push -u origin main
    - 通常需要 1-2 分钟
 
 5. 访问网站
-   - URL: `https://YOUR_USERNAME.github.io/beaconsync/`
+   - URL: `https://YOUR_USERNAME.github.io/beacon-sync-doc/`
    - 在 Pages 设置页面会显示部署状态和URL
 
 ## ✅ 本地测试（推荐）
@@ -161,11 +161,11 @@ gem install bundler jekyll
 
 ### 测试运行
 ```bash
-cd beaconsync
+cd beacon-sync-doc
 bundle install
 bundle exec jekyll serve --livereload
 
-# 访问 http://localhost:4000/beaconsync/
+# 访问 http://localhost:4000/beacon-sync-doc/
 ```
 
 ### 测试内容

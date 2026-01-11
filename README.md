@@ -1,6 +1,6 @@
 # Beacon Node 同步模块详解
 
-[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://xueqianLu.github.io/beaconsync/)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://xueqianLu.github.io/beacon-sync-doc/)
 [![Progress](https://img.shields.io/badge/Progress-28.9%25-green)](./PROGRESS.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
@@ -11,7 +11,7 @@
 
 ## 📚 在线阅读
 
-**GitHub Pages**: [https://xueqianLu.github.io/beaconsync/](https://xueqianLu.github.io/beaconsync/)
+**GitHub Pages**: [https://xueqianLu.github.io/beacon-sync-doc/](https://xueqianLu.github.io/beacon-sync-doc/)
 
 ---
 
@@ -85,14 +85,14 @@
 
 ### 在线阅读（推荐）
 
-访问 [GitHub Pages](https://xueqianLu.github.io/beaconsync/) 在线阅读。
+访问 [GitHub Pages](https://xueqianLu.github.io/beacon-sync-doc/) 在线阅读。
 
 ### 本地阅读
 
 ```bash
 # 克隆仓库
-git clone https://github.com/xueqianLu/beaconsync.git
-cd beaconsync
+git clone https://github.com/xueqianLu/beacon-sync-doc.git
+cd beacon-sync-doc
 
 # 使用Markdown阅读器打开任意章节
 # 或者在GitHub/IDE中直接阅读
@@ -107,7 +107,7 @@ bundle install
 # 启动本地服务器
 bundle exec jekyll serve
 
-# 访问 http://localhost:4000/beaconsync/
+# 访问 http://localhost:4000/beacon-sync-doc/
 ```
 
 详见 [DEPLOY.md](./DEPLOY.md) 了解部署详情。
@@ -172,7 +172,7 @@ bundle exec jekyll serve
 
 ## 🔗 相关链接
 
-- **在线文档**: [https://xueqianLu.github.io/beaconsync/](https://xueqianLu.github.io/beaconsync/)
+- **在线文档**: [https://xueqianLu.github.io/beacon-sync-doc/](https://xueqianLu.github.io/beacon-sync-doc/)
 - **Prysm**: [https://docs.prylabs.network/](https://docs.prylabs.network/)
 - **共识规范**: [https://github.com/ethereum/consensus-specs](https://github.com/ethereum/consensus-specs)
 - **libp2p**: [https://docs.libp2p.io/](https://docs.libp2p.io/)
@@ -187,7 +187,7 @@ bundle exec jekyll serve
 
 ## 📧 联系方式
 
-- **Issues**: [GitHub Issues](https://github.com/xueqianLu/beaconsync/issues)
+- **Issues**: [GitHub Issues](https://github.com/xueqianLu/beacon-sync-doc/issues)
 - **Email**: your-email@example.com
 
 ---
