@@ -53,28 +53,18 @@ partition "Pending 队列与缺失父块处理" {
 }
 
 partition "实时性与早期拒绝 (Early Rejection)" {
-  :validateBlockTime(block):
-  - blockSlot := block.Block().Slot()
-  - currentSlot := chain.CurrentSlot()
-  - 若 blockSlot > currentSlot+1 => "block is too far in the future"
-  - 若 blockSlot + PropagationRange < currentSlot => "block is too old"
+  :validateBlockTime(block)\n- blockSlot := block.Block().Slot()\n- currentSlot := chain.CurrentSlot()\n- 若 blockSlot > currentSlot+1 => "block is too far in the future"\n- 若 blockSlot + PropagationRange < currentSlot => "block is too old";
 
-  :validateBeaconBlockPubSub(ctx, msg):
-  - 若 hasSeenBlock(msg.ID) => ValidationIgnore
-  - quickValidateSlot(msg.Data) 失败 => ValidationReject
-  - 否则进入 fullValidateBlock(ctx, msg):\n    · 基础检查 (slot 范围 / proposerIndex / finalized 之前)\n    · 签名验证\n    · 状态转换验证\n    · 执行 payload 验证 (post-merge)
+  :validateBeaconBlockPubSub(ctx, msg)\n- 若 hasSeenBlock(msg.ID) => ValidationIgnore\n- quickValidateSlot(msg.Data) 失败 => ValidationReject\n- 否则进入 fullValidateBlock(ctx, msg): 基础检查 / 签名验证 / 状态转换 / 执行 payload 验证 (post-merge);
 }
 
 partition "保持同步状态 maintainSync" {
-  :maintainSync():
-  - 每 12s (1 slot) 触发一次检查
-  - isFallingBehind():
-    · currentSlot := chain.CurrentSlot()
-    · headSlot := chain.HeadSlot()
-    · 若 currentSlot - headSlot > 2 * SlotsPerEpoch\n      视为 Falling Behind
+  :maintainSync()\n- 每 12s (1 slot) 触发一次检查;
+
+  :isFallingBehind()\n- currentSlot := chain.CurrentSlot()\n- headSlot := chain.HeadSlot()\n- 若 currentSlot - headSlot > 2 * SlotsPerEpoch 视为 Falling Behind;
   if (isFallingBehind == true) then (落后较多)
     :log.Warn("Falling behind, may need to resync");
-    :requestMissingBlocks():\n    · 通过 Req/Resp 向 peers 主动请求缺失区块\n    · 可能触发重新进入 Initial / Catch-up Sync 流程;
+    :requestMissingBlocks(): 通过 Req/Resp 向 peers 主动请求缺失区块, 可能触发重新进入 Initial / Catch-up Sync 流程;
   endif
 }
 

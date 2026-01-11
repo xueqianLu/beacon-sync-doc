@@ -10,11 +10,9 @@ partition "进程启动" {
 
 partition "等待链启动 waitForChainStart" {
   :从配置读取 GenesisTime;
-  :循环检查当前时间 >= GenesisTime;
-  if (尚未到达 genesis?) then (是)
+  while (当前时间 < GenesisTime?) is (是)
     :阻塞 / 睡眠一小段时间;
-    repeat
-  endif
+  endwhile
   :创世时间已到, 链可以开始出块;
 }
 
