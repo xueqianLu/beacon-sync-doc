@@ -8,7 +8,7 @@
 
 ### 主流程
 
-![业务 7：Regular Sync 主线](img/business7_regular_sync_flow.png)
+![业务 7：Regular Sync 主线](img/business7_regular_sync.png)
 
 > 更详细的 Regular Sync 行为说明参见：
 >

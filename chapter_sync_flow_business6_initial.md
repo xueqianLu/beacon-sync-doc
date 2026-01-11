@@ -8,7 +8,7 @@
 
 ### 主流程
 
-![业务 6：Initial Sync 主线](img/business6_initial_sync_flow.png)
+![业务 6：Initial Sync 主线](img/business6_initial_sync.png)
 
 子流程跳转：
 
