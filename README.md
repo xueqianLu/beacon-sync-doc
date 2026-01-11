@@ -1,7 +1,7 @@
 # Beacon Node 同步模块详解
 
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://xueqianLu.github.io/beacon-sync-doc/)
-[![Progress](https://img.shields.io/badge/Progress-28.9%25-green)](./PROGRESS.md)
+[![Progress](https://img.shields.io/badge/Progress-62.2%25-green)](./PROGRESS.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
@@ -36,7 +36,7 @@
 
 ## 📖 目录
 
-### ✅ 已完成章节 (13/45)
+### ✅ 已完成章节 (28/45)
 
 #### [第一部分：基础概念与架构](./beacon_sync_outline.md) (100%)
 
@@ -66,9 +66,11 @@
 
 ### 📋 计划中章节
 
-- 第三部分: Req/Resp 协议域 (0/6 章)
-- 第四部分: Gossipsub 协议域 (0/4 章)
-- 第七~十二部分: 辅助机制、高级主题 (0/21 章)
+- 第八部分: 高级主题 (29-32 章，0/4)
+- 第九部分: 错误处理 (33-36 章，0/4)
+- 第十部分: 测试 (37-39 章，0/3)
+- 第十一部分: 实践指南 (40-43 章，0/4)
+- 第十二部分: 未来发展 (44-45 章，0/2)
 
 查看完整大纲: [beacon_sync_outline.md](./beacon_sync_outline.md)
 
@@ -118,11 +120,11 @@ bundle exec jekyll serve
 
 ```
 总章节数:    45章 (计划)
-已完成:      13章 (28.9%)
-总行数:      7,905行
-文件大小:    ~196KB
-代码示例:    70+段
-流程图:      30+个
+已完成:      28章 (62.2%)
+总行数:      25,000+行
+文件大小:    ~850KB
+代码示例:    350+段
+流程图:      80+个
 ```
 
 ---
