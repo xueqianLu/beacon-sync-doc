@@ -5,29 +5,17 @@ start
 
 partition "从 Initial 切换到 Regular Sync" {
   :Initial Sync / Checkpoint Sync 完成后;
-  :checkTransitionToRegularSync():
-  - currentSlot := chain.CurrentSlot()
-  - headSlot := chain.HeadSlot()
-  - 若 currentSlot - headSlot < SlotsPerEpoch 则:
-    · setInitialSyncComplete()
-    · log.Info("Transitioned to regular sync");
+  :checkTransitionToRegularSync()\n- currentSlot := chain.CurrentSlot()\n- headSlot := chain.HeadSlot()\n- 若 currentSlot - headSlot < SlotsPerEpoch 则:\n- setInitialSyncComplete()\n- log.Info("Transitioned to regular sync");
 }
 
 partition "订阅 Gossipsub 主题" {
-  :RegularSync.registerSubscribers():
-  - subscribeToBlocks() 订阅 beacon_block 主题
-  - subscribeToAggregateAndProof() 等其他主题
-  - manageAttestationSubnets() 动态 attestation 子网
-  :subscribeToBlocks():
-  - topic := P2P.BlockTopic()
-  - blockSub := P2P.PubSub().Subscribe(topic)
-  - 启动 beaconBlockSubscriber(ctx, blockSub) 循环读取消息;
+  :RegularSync.registerSubscribers()\n- subscribeToBlocks() 订阅 beacon_block 主题\n- subscribeToAggregateAndProof() 等其他主题\n- manageAttestationSubnets() 动态 attestation 子网;
+
+  :subscribeToBlocks()\n- topic := P2P.BlockTopic()\n- blockSub := P2P.PubSub().Subscribe(topic)\n- 启动 beaconBlockSubscriber(ctx, blockSub) 循环读取消息;
 }
 
 partition "接收新区块并快速路径处理" {
-  :beaconBlockSubscriber(ctx, sub):
-  - 循环调用 sub.Next(ctx) 取 Gossip 消息
-  - 将原始消息 decode 为 SignedBeaconBlock
+  :beaconBlockSubscriber(ctx, sub)\n- 循环调用 sub.Next(ctx) 取 Gossip 消息\n- 将原始消息 decode 为 SignedBeaconBlock;
 
   :对每个 signed 调用 hasParent(signed);
   if (hasParent == true) then (有父块)
@@ -40,16 +28,9 @@ partition "接收新区块并快速路径处理" {
 }
 
 partition "Pending 队列与缺失父块处理" {
-  :addToPendingQueue(signed):
-  - 将区块按 slot/root 存入 pending 队列结构
-  - 记录 parentRoot -> 子块映射
-  - 异步触发请求父块 (Req/Resp BlocksByRoot / BlocksByRange)
+  :addToPendingQueue(signed)\n- 将区块按 slot/root 存入 pending 队列结构\n- 记录 parentRoot -> 子块映射\n- 异步触发请求父块 (Req/Resp BlocksByRoot / BlocksByRange);
 
-  :当父块通过 Gossip 或 Req/Resp 抵达时:
-  - 正常通过 ReceiveBlock 处理父块
-  - 调用 processPendingBlocks(parentRoot)
-    · 查找所有以 parentRoot 为父的 pending blocks
-    · 按 slot 排序后依次再次调用 ReceiveBlock
+  :当父块通过 Gossip 或 Req/Resp 抵达时\n- 正常通过 ReceiveBlock 处理父块\n- 调用 processPendingBlocks(parentRoot)\n- 查找所有以 parentRoot 为父的 pending blocks\n- 按 slot 排序后依次再次调用 ReceiveBlock;
 }
 
 partition "实时性与早期拒绝 (Early Rejection)" {
