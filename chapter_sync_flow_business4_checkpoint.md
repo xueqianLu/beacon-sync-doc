@@ -8,7 +8,7 @@
 
 ### 主流程
 
-![业务 4：Checkpoint Sync 主线](img/business4_checkpoint_sync_flow.png)
+![业务 4：Checkpoint Sync 主线](img/business4_checkpoint_overall.png)
 
 子流程跳转：
 
@@ -22,7 +22,7 @@
 
 ### B4 Checkpoint Init & Forward Sync（初始化 + 向前同步） {#b4-checkpoint-init-and-forward}
 
-![B4 Checkpoint Init and Forward Sync](img/business4_checkpoint_init_and_forward_sync.png)
+![B4 Checkpoint Init and Forward Sync](img/business4_checkpoint_init_and_forward.png)
 
 ### B4 Checkpoint Backfill（历史回填） {#b4-checkpoint-backfill}
 
