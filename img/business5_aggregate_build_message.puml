@@ -1,0 +1,31 @@
+@startuml business5_agg_build
+Title Aggregate & Proof / 本地聚合与构造 SignedAggregateAttestationAndProof 细化流程
+
+start
+
+partition "收集单个 attestations" {
+  :节点在 attestation 子网上接收并验证单个 Attestation\n(见 business2_attestation_processing, validateAttestation);
+  :将通过验证且具有相同 AttestationData 的单票\n放入本地聚合缓存 (按 {slot, committeeIndex, beaconBlockRoot} 分组);
+}
+
+partition "本地聚合 (执行方: 被选中的 aggregator)" {
+  :在目标 slot 内, aggregator 从缓存中取出同一数据的单票集合;
+  :聚合 aggregationBits: 按 bitwise OR 组合所有单票的 bits;
+  :收集所有参与者的签名, 使用 BLS 聚合为一个 signature;
+  :构造 ethpb.Attestation 作为 Aggregate\n(带聚合后的 aggregationBits 与聚合签名);
+}
+
+partition "构造 AggregateAttestationAndProof" {
+  :构造 ethpb.AggregateAttestationAndProof 结构 agg:
+  - agg.Aggregate = 上一步构造的 Aggregate Attestation\n  - agg.AggregatorIndex = 本地验证者索引\n  - agg.SelectionProof = 前一阶段计算的 selectionProof;
+  :对 agg 进行签名, 得到 ethpb.SignedAggregateAttestationAndProof:
+  - 使用 DomainAggregateAndProof 签名域 (实现细节视规范);
+}
+
+partition "提交给 Gossip 广播模块" {
+  :将 SignedAggregateAttestationAndProof 交给 P2P 广播层;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml business5_aggregate_overall
+Title Aggregate & Proof 聚合投票业务主线: 单票产生 -> 聚合者选举 -> 本地聚合 -> Gossip 广播 -> 接收与验证
+
+start
+
+partition "单个 Attestation 产生" {
+  :验证者按职责在目标 slot 生成单个 Attestation\n(见 Business 2: 投票生成业务线);
+  :单票通过 beacon_attestation_N 子网 gossip 传播;
+}
+
+partition "聚合者选举与职责发现" {
+  :节点从同步/验证者客户端获取本 epoch duties;
+  :候选验证者为每个 slot 计算 selection proof\n(使用 DomainSelectionProof, 消息为 slot);
+  :根据 selection proof 和阈值规则判断自己是否为 aggregator;
+}
+
+partition "本地聚合与构造 AggregateAndProof" {
+  :被选中的 aggregator 在本地收集同一 AttestationData 的单票;
+  :聚合 aggregationBits 与 BLS 签名, 构造 Aggregate Attestation;
+  :构造 AggregateAttestationAndProof 结构\n(包含 AggregatorIndex, Aggregate, SelectionProof);
+  :签名得到 SignedAggregateAttestationAndProof;
+}
+
+partition "Gossip 广播 (aggregate_and_proof)" {
+  :通过 P2P.PubSub().Publish 在\n/eth2/{fork_digest}/beacon_aggregate_and_proof/{encoding} 主题上广播;
+}
+
+partition "接收与验证" {
+  :其他节点在 aggregate_and_proof 主题上收到消息;
+  :调用 validateAggregateAndProof(ctx, pid, msg) 进行验证:\n- validateAggregateBasics\n- validateAggregatorIndex\n- validateSelectionProof\n- validateAggregateSignature\n- validateAggregatorSignature;
+  :通过验证的聚合投票加入本地 Aggregate Pool,\n由 proposer 在构建区块时选择打包;
+}
+
+stop
+
+@enduml

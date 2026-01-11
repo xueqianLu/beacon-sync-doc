@@ -1,6 +1,14 @@
-# 第21章 Regular Sync概述
+# 第 21 章 Regular Sync 概述
 
-## 21.1 与Initial Sync的区别
+## 21.1 与 Initial Sync 的区别
+
+### 21.0 Regular Sync 主流程图
+
+下面的流程图给出了 Regular Sync 在运行阶段的整体工作流：如何从 Gossipsub 接收区块、区分快速/慢速路径、处理缺失父块以及通过 `maintainSync` 保持与网络头部对齐。更细节的同步流程可参见附录中的同步流程图章节：
+
+- 附录：同步相关流程图总览（业务 7：Regular Sync 日常同步）
+
+![业务 7：Regular Sync 主线](img/business7_regular_sync_flow.png)
 
 ### 21.1.1 同步模式对比
 
@@ -17,23 +25,23 @@
 └─────────────────┴────────────────┴─────────────────┘
 ```
 
-### 21.1.2 Regular Sync特点
+### 21.1.2 Regular Sync 特点
 
 ```go
 // Regular sync主要职责
 type RegularSync struct {
     // 1. 监听Gossipsub消息
     subscribeToTopics()
-    
+
     // 2. 实时验证新区块
     validateIncomingBlocks()
-    
+
     // 3. 处理缺失父块
     handleMissingParents()
-    
+
     // 4. 管理pending队列
     managePendingQueue()
-    
+
     // 5. 更新fork choice
     updateForkChoice()
 }
@@ -43,7 +51,7 @@ type RegularSync struct {
 
 ## 21.2 实时跟踪网络头部
 
-### 21.2.1 Gossipsub监听
+### 21.2.1 Gossipsub 监听
 
 ```go
 // 来自prysm/beacon-chain/sync/subscriber_beacon_blocks.go
@@ -55,12 +63,12 @@ func (s *Service) beaconBlockSubscriber(
     if !ok {
         return errors.New("message is not a beacon block")
     }
-    
+
     // 快速路径：直接处理
     if s.hasParent(signed) {
         return s.chain.ReceiveBlock(ctx, signed, blockRoot)
     }
-    
+
     // 慢速路径：父块缺失，加入pending队列
     return s.addToPendingQueue(signed)
 }
@@ -73,28 +81,28 @@ func (s *Service) beaconBlockSubscriber(
 const (
     // 区块必须在SECONDS_PER_SLOT内传播
     SECONDS_PER_SLOT = 12
-    
+
     // 允许的时钟偏差
     MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500 * time.Millisecond
-    
-    // Attestation传播时间窗口  
+
+    // Attestation传播时间窗口
     ATTESTATION_PROPAGATION_SLOT_RANGE = 32 // 1 epoch
 )
 
 func (s *Service) validateBlockTime(block interfaces.SignedBeaconBlock) error {
     blockSlot := block.Block().Slot()
     currentSlot := s.chain.CurrentSlot()
-    
+
     // 不能太早
     if blockSlot > currentSlot+1 {
         return errors.New("block is too far in the future")
     }
-    
+
     // 不能太晚
     if blockSlot+ATTESTATION_PROPAGATION_SLOT_RANGE < currentSlot {
         return errors.New("block is too old")
     }
-    
+
     return nil
 }
 ```
@@ -103,13 +111,13 @@ func (s *Service) validateBlockTime(block interfaces.SignedBeaconBlock) error {
 
 ## 21.3 触发条件
 
-### 21.3.1 从Initial切换到Regular
+### 21.3.1 从 Initial 切换到 Regular
 
 ```go
 func (s *Service) checkTransitionToRegularSync() {
     currentSlot := s.chain.CurrentSlot()
     headSlot := s.chain.HeadSlot()
-    
+
     // 只落后不到1个epoch，切换到regular sync
     if currentSlot-headSlot < params.BeaconConfig().SlotsPerEpoch {
         s.setInitialSyncComplete()
@@ -118,7 +126,7 @@ func (s *Service) checkTransitionToRegularSync() {
 }
 ```
 
-### 21.3.2 Regular Sync工作流
+### 21.3.2 Regular Sync 工作流
 
 ```
            Gossipsub消息到达
@@ -142,7 +150,7 @@ func (s *Service) checkTransitionToRegularSync() {
 func (s *Service) maintainSync() {
     ticker := time.NewTicker(12 * time.Second) // 每个slot检查
     defer ticker.Stop()
-    
+
     for {
         select {
         case <-ticker.C:
@@ -151,7 +159,7 @@ func (s *Service) maintainSync() {
                 log.Warn("Falling behind, may need to resync")
                 s.requestMissingBlocks()
             }
-            
+
         case <-s.ctx.Done():
             return
         }
@@ -161,7 +169,7 @@ func (s *Service) maintainSync() {
 func (s *Service) isFallingBehind() bool {
     currentSlot := s.chain.CurrentSlot()
     headSlot := s.chain.HeadSlot()
-    
+
     // 落后超过2个epoch认为是falling behind
     return currentSlot-headSlot > 2*params.BeaconConfig().SlotsPerEpoch
 }
@@ -182,12 +190,12 @@ func (s *Service) validateBeaconBlockPubSub(
     if s.hasSeenBlock(msg.ID) {
         return pubsub.ValidationIgnore
     }
-    
+
     // 2. 快速检查：slot是否合理
     if err := s.quickValidateSlot(msg.Data); err != nil {
         return pubsub.ValidationReject
     }
-    
+
     // 3. 完整验证
     return s.fullValidateBlock(ctx, msg)
 }
@@ -200,7 +208,7 @@ func (s *Service) validateBeaconBlockPubSub(
 func (s *Service) batchProcessor() {
     batch := make([]interfaces.SignedBeaconBlock, 0, 32)
     timer := time.NewTimer(100 * time.Millisecond)
-    
+
     for {
         select {
         case block := <-s.blockChan:
@@ -209,7 +217,7 @@ func (s *Service) batchProcessor() {
                 s.processBatch(batch)
                 batch = batch[:0]
             }
-            
+
         case <-timer.C:
             if len(batch) > 0 {
                 s.processBatch(batch)
@@ -223,4 +231,4 @@ func (s *Service) batchProcessor() {
 
 ---
 
-**下一章**: 第22章 Block Processing Pipeline详解
+**下一章**: 第 22 章 Block Processing Pipeline 详解

@@ -1,0 +1,36 @@
+@startuml business3_execution
+Title 执行层交易业务 / 执行 细化流程 (区块传播后的执行与确认)
+
+start
+
+partition "共识层接收区块" {
+  :其它节点在 Gossipsub 上接收到 Beacon Block;
+  :通过区块验证管线进行基础检查、签名验证、\n父块可用性与状态转换预验证;
+}
+
+partition "触发执行层验证" {
+  :从 Beacon Block 中提取 ExecutionPayload (或 Header);
+  :共识客户端通过 Engine API 调用执行客户端\nengine_newPayload / engine_executePayload;
+}
+
+partition "执行客户端执行 Payload" {
+  :检查父执行区块是否已知, 状态是否可用;
+  :按顺序执行 Payload 中的所有交易:\n- 解析交易并检查 nonce / 余额 / gas\n- 调用合约代码并更新存储\n- 记录 logs 与 receipts;
+  :累计 gasUsed 与费用, 计算 Bloom / ReceiptsRoot;
+  :更新执行状态 Merkle 根 (StateRoot) 与 BlockHash;
+  if (执行中出现共识层不可接受的错误?) then (是)
+    :将执行失败 (INVALID) 结果返回给共识客户端;
+    stop
+  endif
+  :将成功的执行结果 (VALID, 状态根与区块哈希)\n返回给共识客户端;
+}
+
+partition "结果与 forkchoice" {
+  :共识客户端验证 ExecutionPayload 中记录的根哈希\n(StateRoot, ReceiptsRoot 等) 与执行结果一致;
+  :若一致, 将该区块视为执行合理的候选 head;
+  :通过 forkchoiceUpdated 等逻辑更新链头,\n触发后续 attestation / finality 流程;
+}
+
+stop
+
+@enduml

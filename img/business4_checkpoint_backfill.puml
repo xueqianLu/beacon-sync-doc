@@ -1,0 +1,50 @@
+@startuml business4_checkpoint_backfill
+Title Checkpoint Sync / Backfill 历史回填 细化流程
+
+start
+
+partition "Backfill 启动条件" {
+  :命令行或配置启用 --enable-experimental-backfill;
+  :节点在完成 Checkpoint Sync 前向同步后,
+   启动 backfill.Service.backfill();
+}
+
+partition "backfill() 主循环" {
+  :startSlot := getCheckpointSlot();
+  :currentSlot := startSlot;
+  while (currentSlot > 0?) is (是)
+    :batchEnd := currentSlot;
+    :batchStart := currentSlot - batchSize;
+    if (batchStart < 0) then (是)
+      :batchStart = 0;
+    endif
+
+    :调用 requestBackfillBatch(batchStart, batchEnd);
+    if (requestBackfillBatch 返回错误?) then (是)
+      :记录错误并根据策略重试或中止 backfill;
+      break
+    endif
+
+    :saveBlocks(blocks) 将本批历史区块写入 BeaconDB; 
+    :更新索引: slot->root, root->state (如有), finalized 检查;
+
+    :currentSlot = batchStart; // 向更早 slot 继续回退
+  endwhile (否)
+}
+
+partition "requestBackfillBatch(start, end)" {
+  :根据 [start, end) 构造 BlocksByRange 请求;
+  :选择历史数据较完整的 peers 发送请求;
+  :收集来自 peers 的区块响应, 去重并按 slot 排序;
+  :返回 blocks 列表给 backfill 主循环;
+}
+
+partition "saveBlocks(blocks)" {
+  :遍历 blocks, 对每个执行基础结构校验 (parentRoot 链接等);
+  :批量写入 BeaconDB 的历史分区;
+  :必要时触发 compact / prune 策略以控制存储大小;
+}
+
+stop
+
+@enduml

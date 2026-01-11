@@ -24,27 +24,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
+      - name: Render PlantUML diagrams
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre graphviz
+          curl -L -o plantuml.jar https://github.com/plantuml/plantuml/releases/download/v1.2024.5/plantuml-1.2024.5.jar
+          if compgen -G "img/*.puml" > /dev/null; then
+            java -jar plantuml.jar -tpng img/*.puml
+          else
+            echo "No .puml files found in img/, skipping PlantUML."
+          fi
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: "3.1"
           bundler-cache: false
-          
+
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
-        
+
       - name: Install dependencies
         run: |
           gem install bundler
           bundle install
-        
+
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
-          
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

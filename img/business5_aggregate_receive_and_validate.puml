@@ -1,0 +1,63 @@
+@startuml business5_agg_receive_validate
+Title Aggregate & Proof / 接收与验证 细化流程
+
+start
+
+partition "订阅与接收" {
+  :sync.Service.subscribeToAggregateAndProof() 订阅 aggregate_and_proof 主题;
+  :aggregateAndProofSubscriber(ctx, sub) 循环调用 sub.Next(ctx) 拉取消息;
+  :对每条消息调用 handleAggregateAndProof(ctx, msg)\n(内部转调 validateAggregateAndProof);
+}
+
+partition "validateAggregateAndProof(ctx, pid, msg)" {
+  :解码消息为 ethpb.SignedAggregateAttestationAndProof;
+  :提取 agg := aggregate.Message, att := agg.Aggregate;
+
+  :result := validateAggregateBasics(ctx, agg);
+  if (result != ValidationAccept) then (否决)
+    :返回 result (Reject/Ignore);
+    stop
+  endif
+
+  :attRoot := att.Data.HashTreeRoot();
+  :构造 seenKey := attRoot + AggregatorIndex;
+  if (hasSeenAggregate(seenKey)?) then (已seen)
+    :返回 ValidationIgnore;
+    stop
+  endif
+
+  :调用 validateAggregatorIndex(ctx, agg);
+  if (失败?) then (是)
+    :返回 ValidationReject;
+    stop
+  endif
+
+  :调用 validateSelectionProof(ctx, agg);
+  if (失败?) then (是)
+    :返回 ValidationReject;
+    stop
+  endif
+
+  :调用 validateAggregateSignature(ctx, att);
+  if (失败?) then (是)
+    :返回 ValidationReject;
+    stop
+  endif
+
+  :调用 validateAggregatorSignature(ctx, aggregate);
+  if (失败?) then (是)
+    :返回 ValidationReject;
+    stop
+  endif
+
+  :setSeenAggregate(seenKey);
+  :返回 ValidationAccept;
+}
+
+partition "后续消费" {
+  :通过验证的 aggregate 放入 Aggregate Pool,\n供 proposer 在构造区块时选用;
+}
+
+stop
+
+@enduml

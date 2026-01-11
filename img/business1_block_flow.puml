@@ -1,0 +1,45 @@
+@startuml business1
+title Business 1: 区块生成 -> 区块发出 -> 区块接收 -> 区块处理
+
+partition 生成 {
+  :区块被提议/生成 (Proposer);
+  :打包交易与 Execution Payload;
+  :签名 (Proposer Signature & RANDAO);
+  :本地保存 / 广播准备;
+}
+
+partition 发出 {
+  if (选择传播方式?) then (实时广播)
+    :Gossipsub (beacon_block);
+    :编码: SSZ -> Snappy;
+    :Publish 到 Block 主题;
+  else (历史/补发)
+    :Req/Resp (blocks by range);
+    :响应请求并发送 block payload;
+  endif
+}
+
+partition 接收 {
+  :网络: Gossipsub / ReqResp;
+  :Block Router;
+  if (去重检查) then (已见)
+    :忽略;
+  else (未见)
+    :路由到 Validation Pipeline;
+  endif
+}
+
+partition 验证与处理 {
+  :Level 1: 基本格式验证 (SSZ / 时间 / 字段范围);
+  :Level 2: 签名验证 (提议者、RANDAO、Attestations 批量);
+  :Level 3: 状态转换验证 (获取父状态 -> 执行 state transition);
+  if (父块是否存在?) then (是)
+    :写入数据库 (BeaconDB);
+    :触发 Forkchoice 更新 / 广播已处理状态;
+  else (否)
+    :加入 Pending Blocks 队列;
+    :请求缺失父块 (Req/Resp);
+  endif
+}
+
+@enduml

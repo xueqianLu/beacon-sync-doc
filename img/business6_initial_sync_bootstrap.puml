@@ -1,0 +1,48 @@
+@startuml business6_initial_sync_bootstrap
+Title Initial Sync / 启动与前置条件 细化流程
+
+start
+
+partition "进程启动" {
+  :启动 beacon-chain 进程 (prysm.sh beacon-chain ...);
+  :构建 sync.InitialSync Service 实例;
+}
+
+partition "等待链启动 waitForChainStart" {
+  :从配置读取 GenesisTime;
+  :循环检查当前时间 >= GenesisTime;
+  if (尚未到达 genesis?) then (是)
+    :阻塞 / 睡眠一小段时间;
+    repeat
+  endif
+  :创世时间已到, 链可以开始出块;
+}
+
+partition "等待足够 peers waitForMinimumPeers" {
+  :根据 SyncConfig.MinPeersToSync 设定阈值; 
+  repeat
+    :当前已连接 peers := P2P.Peers().ConnectedCount();
+    if (peers < MinPeersToSync) then (不足)
+      :log.Debug("waiting for minimum peers");
+      :sleep(短暂间隔);
+    else (满足)
+      :继续;
+      break
+    endif
+  repeat while (true)
+}
+
+partition "是否需要 Initial Sync needsInitialSync" {
+  :currentSlot := chain.CurrentSlot();
+  :headSlot := chain.HeadSlot();
+  :若 currentSlot > headSlot + SlotsPerEpoch\n则返回 true (需要 initial sync);
+  if (!needsInitialSync()) then (false)
+    :log.Info("Node is already synced");
+    :标记状态为 synced, 直接进入 Regular Sync;
+    stop
+  endif
+}
+
+stop
+
+@enduml

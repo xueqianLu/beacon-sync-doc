@@ -1,0 +1,43 @@
+@startuml business6_initial_sync_execute_mode
+Title Initial Sync / 按模式执行初始同步 细化流程
+
+start
+
+partition "获得同步模式" {
+  :通过 determineInitialSyncMode(ctx) 得到 mode;
+}
+
+partition "根据 mode 分支" {
+  if (mode == modeNonSync) then (已同步)
+    :markSynced();
+    :log.Info("Node is already synced, skipping initial sync");
+    stop
+  elseif (mode == modeCheckpoint) then (Checkpoint Sync)
+    :log.Info("Starting checkpoint sync mode");
+    :err := checkpointSync();
+    if (err != nil) then (失败)
+      :log.WithError(err).Error("Checkpoint sync failed, falling back to full sync");
+      :mode = modeFullSync;
+      :roundRobinSync.start();
+    else (成功)
+      :Checkpoint Sync 完成后, 通过 syncFromSlot 等\n继续向 head 补齐区块 (详见 Checkpoint Sync 业务线);
+    endif
+  elseif (mode == modeOptimistic) then (Optimistic Sync)
+    :log.Info("Starting optimistic sync mode");
+    :optimisticSync();
+  elseif (mode == modeFullSync) then (Full Sync)
+    :log.Info("Starting full sync mode");
+    :roundRobinSync.start();
+  endif
+}
+
+partition "同步进度监控" {
+  :并行启动 monitorSyncStatus()/checkSyncStatus():
+  - 定期比较 currentSlot 与 headSlot
+  - 当差距缩小到 < SlotsPerEpoch 时, 标记 initial sync 完成,
+    触发向 Regular Sync 状态机切换;
+}
+
+stop
+
+@enduml

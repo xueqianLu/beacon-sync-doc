@@ -1,0 +1,44 @@
+@startuml business3_packing
+Title 执行层交易业务 / 打包 细化流程 (执行层打包 + 共识层打包 + MEV)
+
+start
+
+partition "触发打包请求 (共识层)" {
+  :在某个 slot, 某验证者被选为 Proposer;
+  :共识客户端根据 forkchoice 选出父 BeaconBlock 及 head;
+  :通过 Engine API (forkchoiceUpdated + getPayload)\n向本地执行客户端或外部 Relay 请求候选 Execution Payload;
+}
+
+partition "路径选择" {
+  if (启用 MEV-PBS / 外部 Builder?) then (是)
+    :进入 MEV Builder 路径;
+  else (否)
+    :进入本地执行层打包路径;
+  endif
+}
+
+partition "本地执行层打包" {
+  :执行客户端从本地 txpool 中选择交易\n(排序策略: gasPrice / feePerGas / 依赖关系 / gasLimit 约束);
+  :模拟执行交易: 依次执行, 检查 gas 消耗与状态更新,\n剔除无效或失败成本过高的交易;
+  :构建 ExecutionPayload: 包含交易列表、Coinbase、LogsBloom、\nReceiptsRoot、StateRoot、BlockHash 等字段;
+  :将 ExecutionPayload 作为候选 payload 返回给共识客户端;
+}
+
+partition "MEV Builder 打包" {
+  :Searchers 根据策略构造 Bundles (有顺序约束),\n通过专用 API 向 Builder / Relay 提交;
+  :Builder 从公共 mempool + Bundles 中搜索组合,\n运行模拟执行以评估 MEV 收益与风险;
+  :选择收益最高且不违反协议 / 策略的 ExecutionPayload;
+  :通过 Relay 向 Proposer 暴露 Payload Header\n(可能是 Blinded Header, 包含 fee / value 承诺);
+  :Proposer 在多个 Builder 提供的报价中\n选择收益最高的 Header;
+}
+
+partition "共识层打包 (Beacon Block)" {
+  :共识客户端拿到最终决定的 ExecutionPayload 或 Header;
+  :构建 Beacon Block: 包含\n- 共识字段 (slot, proposerIndex, randao, attestations 等)\n- ExecutionPayload 或其 Header (post-merge);
+  :对 Beacon Block 进行 BLS 签名;
+  :通过 Gossipsub (beacon_block 主题) 广播该区块;
+}
+
+stop
+
+@enduml

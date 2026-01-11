@@ -1,6 +1,14 @@
-# 第22章 Block Processing Pipeline
+# 第 22 章 Block Processing Pipeline
 
 ## 22.1 区块接收流程
+
+### 22.1.0 流程图总览
+
+下图展示了区块从生成、通过 P2P 网络传播，到进入本章所述处理 Pipeline 的整体主流程，详细子流程可参考附录中的流程图总览章节：
+
+- 附录：同步相关流程图总览（业务 1：区块生成与处理）
+
+![业务 1：区块主线](img/business1_block_flow.png)
 
 ### 22.1.1 多源输入
 
@@ -23,7 +31,7 @@
             └────────────────┘
 ```
 
-### 22.1.2 从Gossipsub接收
+### 22.1.2 从 Gossipsub 接收
 
 ```go
 // 来自prysm/beacon-chain/sync/subscriber_beacon_blocks.go
@@ -35,24 +43,24 @@ func (s *Service) beaconBlockSubscriber(
     if !ok {
         return errors.New("invalid block type")
     }
-    
+
     blockRoot, err := signed.Block().HashTreeRoot()
     if err != nil {
         return err
     }
-    
+
     // 去重检查
     if s.hasSeenBlockRoot(blockRoot) {
         return nil
     }
     s.markSeenBlockRoot(blockRoot)
-    
+
     // 路由到处理pipeline
     return s.receiveBlock(ctx, signed, blockRoot)
 }
 ```
 
-### 22.1.3 从Req/Resp接收
+### 22.1.3 从 Req/Resp 接收
 
 ```go
 // 主动请求的blocks直接进入pipeline
@@ -64,7 +72,7 @@ func (s *Service) processRequestedBlock(
     if err != nil {
         return err
     }
-    
+
     return s.receiveBlock(ctx, signed, blockRoot)
 }
 ```
@@ -109,18 +117,18 @@ func (s *Service) validateBasicBlock(
     if block.Block().Slot() == 0 {
         return errors.New("genesis block")
     }
-    
+
     // 2. 时间检查
     if err := s.validateBlockTime(block); err != nil {
         return err
     }
-    
+
     // 3. 提议者索引检查
     proposerIndex := block.Block().ProposerIndex()
     if proposerIndex >= primitives.ValidatorIndex(len(s.cfg.Chain.HeadValidatorsIndices())) {
         return errors.New("invalid proposer index")
     }
-    
+
     return nil
 }
 ```
@@ -136,17 +144,17 @@ func (s *Service) validateBlockSignatures(
     if err := s.verifyProposerSignature(block); err != nil {
         return errors.Wrap(err, "proposer signature invalid")
     }
-    
+
     // 2. RANDAO reveal签名
     if err := s.verifyRandaoReveal(block); err != nil {
         return errors.Wrap(err, "randao reveal invalid")
     }
-    
+
     // 3. Attestation签名（批量验证）
     if err := s.batchVerifyAttestations(block.Block().Body().Attestations()); err != nil {
         return errors.Wrap(err, "attestation signatures invalid")
     }
-    
+
     return nil
 }
 ```
@@ -164,7 +172,7 @@ func (s *Service) validateStateTransition(
     if err != nil {
         return errors.Wrap(err, "could not get pre state")
     }
-    
+
     // 2. 执行状态转换
     postState, err := transition.ExecuteStateTransition(
         ctx,
@@ -174,24 +182,24 @@ func (s *Service) validateStateTransition(
     if err != nil {
         return errors.Wrap(err, "state transition failed")
     }
-    
+
     // 3. 验证状态root
     stateRoot, err := postState.HashTreeRoot(ctx)
     if err != nil {
         return err
     }
-    
+
     if stateRoot != block.Block().StateRoot() {
         return errors.New("state root mismatch")
     }
-    
+
     return nil
 }
 ```
 
 ---
 
-## 22.3 Pending Blocks队列
+## 22.3 Pending Blocks 队列
 
 ### 22.3.1 队列必要性
 
@@ -238,17 +246,17 @@ func (s *Service) addToPendingQueue(
 ) error {
     s.pendingQueueLock.Lock()
     defer s.pendingQueueLock.Unlock()
-    
+
     // 1. 去重检查
     if s.seenPendingBlocks[blockRoot] {
         return nil
     }
-    
+
     // 2. 检查队列大小
     if len(s.slotToPendingBlocks) >= maxPendingBlocks {
         return errors.New("pending queue full")
     }
-    
+
     // 3. 加入队列
     slot := block.Block().Slot()
     s.slotToPendingBlocks[slot] = &pendingQueueBlock{
@@ -257,16 +265,16 @@ func (s *Service) addToPendingQueue(
         parentRoot: block.Block().ParentRoot(),
     }
     s.seenPendingBlocks[blockRoot] = true
-    
+
     log.WithFields(logrus.Fields{
         "slot":       slot,
         "blockRoot":  fmt.Sprintf("%#x", blockRoot),
         "parentRoot": fmt.Sprintf("%#x", block.Block().ParentRoot()),
     }).Debug("Added block to pending queue")
-    
+
     // 4. 请求缺失父块
     go s.requestParentBlock(block.Block().ParentRoot())
-    
+
     return nil
 }
 ```
@@ -280,7 +288,7 @@ func (s *Service) processPendingBlocks(
 ) error {
     s.pendingQueueLock.Lock()
     defer s.pendingQueueLock.Unlock()
-    
+
     // 查找所有以parentRoot为父的blocks
     var childBlocks []*pendingQueueBlock
     for slot, pendingBlk := range s.slotToPendingBlocks {
@@ -289,23 +297,23 @@ func (s *Service) processPendingBlocks(
             delete(s.slotToPendingBlocks, slot)
         }
     }
-    
+
     // 按slot排序
     sort.Slice(childBlocks, func(i, j int) bool {
         return childBlocks[i].block.Block().Slot() < childBlocks[j].block.Block().Slot()
     })
-    
+
     // 递归处理
     for _, childBlk := range childBlocks {
         if err := s.receiveBlock(ctx, childBlk.block, childBlk.blockRoot); err != nil {
             log.WithError(err).Error("Failed to process pending block")
             continue
         }
-        
+
         // 处理完后，检查是否有更多子块
         go s.processPendingBlocks(ctx, childBlk.blockRoot)
     }
-    
+
     return nil
 }
 ```
@@ -316,12 +324,12 @@ func (s *Service) processPendingBlocks(
 func (s *Service) cleanupPendingQueue() {
     ticker := time.NewTicker(time.Minute)
     defer ticker.Stop()
-    
+
     for {
         select {
         case <-ticker.C:
             s.pendingQueueLock.Lock()
-            
+
             currentSlot := s.cfg.Chain.CurrentSlot()
             for slot, pendingBlk := range s.slotToPendingBlocks {
                 // 超过32个slot还未处理，清除
@@ -331,9 +339,9 @@ func (s *Service) cleanupPendingQueue() {
                     log.WithField("slot", slot).Debug("Removed stale pending block")
                 }
             }
-            
+
             s.pendingQueueLock.Unlock()
-            
+
         case <-s.ctx.Done():
             return
         }
@@ -343,7 +351,7 @@ func (s *Service) cleanupPendingQueue() {
 
 ---
 
-## 22.4 完整Pipeline代码
+## 22.4 完整 Pipeline 代码
 
 ```go
 func (s *Service) receiveBlock(
@@ -355,41 +363,41 @@ func (s *Service) receiveBlock(
     if err := s.validateBasicBlock(block); err != nil {
         return errors.Wrap(err, "basic validation failed")
     }
-    
+
     // Stage 2: 检查父块
     parentRoot := block.Block().ParentRoot()
     if !s.hasBlock(parentRoot) {
         // 父块缺失，加入pending队列
         return s.addToPendingQueue(block, blockRoot)
     }
-    
+
     // Stage 3: 签名验证
     if err := s.validateBlockSignatures(ctx, block); err != nil {
         return errors.Wrap(err, "signature validation failed")
     }
-    
+
     // Stage 4: 状态转换
     if err := s.validateStateTransition(ctx, block); err != nil {
         return errors.Wrap(err, "state transition failed")
     }
-    
+
     // Stage 5: 提交给blockchain service
     if err := s.cfg.Chain.ReceiveBlock(ctx, block, blockRoot); err != nil {
         return errors.Wrap(err, "blockchain service rejected block")
     }
-    
+
     // Stage 6: 处理pending子块
     go s.processPendingBlocks(ctx, blockRoot)
-    
+
     log.WithFields(logrus.Fields{
         "slot":      block.Block().Slot(),
         "blockRoot": fmt.Sprintf("%#x", blockRoot),
     }).Info("Block processed successfully")
-    
+
     return nil
 }
 ```
 
 ---
 
-**下一章**: 第23章 缺失父块处理机制
+**下一章**: 第 23 章 缺失父块处理机制

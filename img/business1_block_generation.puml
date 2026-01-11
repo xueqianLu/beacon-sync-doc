@@ -1,0 +1,34 @@
+@startuml business1_generation
+title Business 1 / 生成: 区块生成细化流程
+
+start
+
+:'接到提议者职责'\n(来自 proposer duties / forkchoice head);
+:等待对应 slot 开始 (使用 chain time / genesis time);
+:计算 RANDAO reveal 并准备提议者签名密钥;
+
+:'构建区块骨架';
+:读取当前 forkchoice 头部及父区块 root;
+:从父状态导出候选 pre-state (apply empty slot transitions 如需);
+
+:'填充区块内容';
+:打包执行层交易 / Execution Payload (post-merge 场景);
+:插入 beacon 链对象: attestations / slashing / voluntary exits 等;
+:计算并设置 state_root / body_root 等字段;
+
+:'本地预验证 (可选快速检查)';
+:检查 slot / proposer index / 状态一致性;
+
+:'区块签名';
+:计算 proposer 签名域 (DomainBeaconProposer);
+:计算签名根 (signing_root(block_root, domain));
+:使用验证者密钥对区块进行签名;
+
+:'持久化与后续处理准备';
+:在本地内存结构中缓存待广播区块;
+:触发本地 forkchoice 预更新 (不一定立即写 DB);
+:将区块交给 P2P 广播层 (进入“发出”流程);
+
+stop
+
+@enduml

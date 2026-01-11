@@ -1,0 +1,67 @@
+@startuml business1_processing
+title Business 1 / 验证与处理: 区块验证管线与 Pending 队列细化流程
+
+start
+
+partition "Level 1: 基本格式验证" {
+  :从 receiveBlock 收到 SignedBeaconBlock + block_root;
+  :检查 slot 是否为 0 (排除 genesis gossip);
+  :校验区块时间是否在允许窗口内\n(不能来自未来, 不能早于 finalized 太多); 
+  :检查 proposerIndex 是否在当前 validator 集合范围内;
+  :检查区块是否已在本地 BeaconDB 中存在;
+}
+
+if (Level 1 失败?) then (是)
+  :丢弃区块, 记录日志 (Reject/Ignore);
+  stop
+endif
+
+partition "Level 2: 签名验证" {
+  :根据 proposerIndex 获取提议者公钥 (ValidatorPubKey);
+  :计算签名域 DomainBeaconProposer;
+  :计算 block_root 与 signing_root;
+  :验证 proposer 签名是否有效;
+  if (启用 RANDAO / attestation 批量检查) then (是)
+    :验证 RANDAO reveal 签名;
+    :批量验证区块内 attestation 签名集合;
+  endif
+}
+
+if (Level 2 失败?) then (是)
+  :拒绝区块并可能惩罚发送者 (Gossip scoring);
+  stop
+endif
+
+partition "Level 3: 状态转换验证" {
+  :读取 parent_root = block.parent_root;
+  if (本地缺失父区块?) then (是)
+    :将当前区块加入 Pending Blocks 队列\n(slot -> pendingQueueBlock 映射);
+    :异步向 peers 请求父区块 (Req/Resp);
+    stop
+  else (否)
+    :从 BeaconDB 取出父区块与父状态 (StateGen.StateByRoot);
+  endif
+  :执行状态转换 (transition.ExecuteStateTransition);
+  :计算 post-state 的 state_root 并与区块中的 state_root 比较;
+}
+
+if (状态转换失败或 root 不匹配?) then (是)
+  :拒绝区块, 记录错误并可能调整 peer 评分;
+  stop
+endif
+
+partition "持久化与 forkchoice" {
+  :将区块写入本地 BeaconDB (区块 + 状态 / 索引); 
+  :通知 forkchoice 组件有新 head/branch 可用;
+  :触发 forkchoice 更新最佳链头, 可能更新 justified/finalized;
+}
+
+partition "Pending 队列回溯处理" {
+  :以当前 block_root 作为 parent_root 调用 processPendingBlocks;
+  :从 Pending 队列中找出所有以该 root 为父的子块集合;
+  :按 slot 排序子块列表, 依次调用 receiveBlock 递归处理;
+}
+
+stop
+
+@enduml

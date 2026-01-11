@@ -1,0 +1,38 @@
+@startuml business4_checkpoint_init_and_forward
+Title Checkpoint Sync / 从 Checkpoint 初始化节点并前向同步 细化流程
+
+start
+
+partition "使用 checkpoint state 初始化本地节点" {
+  :startFromCheckpoint(st) 在完成 loadCheckpointState 后被调用;
+  :调用 initFromState(st);
+  :initFromState(st) 内部步骤:
+  :1. 在 BeaconDB 中写入 checkpoint 对应的 finalized block/state 记录;
+  :2. 初始化 ForkchoiceStore / ProtoArray,\n   将 checkpoint 作为已 finalized 的起点;
+  :3. 刷新索引: slot->root, root->state, epoch checkpoints 等;
+  :4. 记录弱主观性检查点元数据 (weak subjectivity checkpoint);
+}
+
+partition "计算起始 slot 并进入前向同步" {
+  :checkpointSlot := st.Slot();
+  :调用 syncFromSlot(checkpointSlot + 1);
+}
+
+partition "syncFromSlot(startSlot) 核心流程" {
+  :与 peers 交换 Status 消息 (本地 finalized / head / forkDigest);
+  :根据对比结果选择合适的同步 peer 列表;
+  :循环从 startSlot 开始, 以批次方式请求区块:
+  :使用 BlocksByRange 请求 [current, current+N) 区间;
+  :或在分叉复杂时使用 BlocksByRoot 针对特定 root 请求;
+  :对每个收到的 SignedBeaconBlock 执行:\n  - 基础验证 (时间 / proposerIndex / finalized 之前等)\n  - 签名验证\n  - 状态转换验证 (使用 StateGen.StateByRoot + ExecuteStateTransition);
+  :验证通过后写入 BeaconDB, 更新 ForkchoiceHead;
+  :current 前进直到与网络 head / finalized 对齐;
+}
+
+partition "切换到 Regular/Optimistic Sync" {
+  :当前 slot 与网络 head 足够接近时,\n将节点同步策略切换为 Regular Sync / Optimistic Sync;
+}
+
+stop
+
+@enduml

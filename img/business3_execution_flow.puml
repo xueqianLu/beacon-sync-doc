@@ -1,0 +1,43 @@
+@startuml business3_overall
+Title 执行层交易业务主线: 交易提交 -> 打包 -> 执行
+
+start
+
+partition "交易提交" {
+  :用户钱包 / DApp 构造交易\n(设置 nonce, gasLimit, maxFeePerGas, priorityFee, data 等);
+  :本地签名后通过 RPC (eth_sendRawTransaction) 提交;
+  :执行客户端验证基本格式与签名,\n将交易放入本地交易池 (txpool);
+  :通过执行层 P2P 网络向其它节点 gossip 交易;
+}
+
+partition "打包" {
+  if (是否启用 PBS / MEV-Boost?) then (是)
+    :'MEV 路径: 执行层打包 + 外部 builder';
+    :Searchers / 做市商 提交 MEV Bundles 给 Builder / Relay;
+    :Builder 从公共 mempool + Bundles 中选择交易,\n构建最大化收益的 Execution Payload;
+    :Relay 向拥有提议权的 Proposer (共识层) 提供\n候选的 Payload Header (Blinded / Full 视具体方案而定);
+  else (否)
+    :'本地执行层打包';
+    :共识客户端在提议 slot 前通过 Engine API\n请求执行客户端构建 Payload (engine_getPayload);
+    :执行客户端从本地 txpool 选择交易 (按 gasPrice / 优先级),\n模拟执行以确保 gas / 状态合法, 构建 ExecutionPayload;
+  endif
+
+  :'共识层打包';
+  :在提议者 slot, 共识客户端选定 forkchoice 头部,\n确定父 BeaconBlock / Checkpoint;
+  :从执行层获取本地构建的 Payload 或从 Relay 选择的 Payload Header;
+  :构建 Beacon Block: 共识部分 + ExecutionPayload(Header);
+  :对 Beacon Block 进行签名后通过 Gossipsub 广播;
+}
+
+partition "执行" {
+  :其它节点在共识层接收到 Beacon Block;
+  :进行共识层的基础 / 签名 / 状态转换检查;
+  :通过 Engine API 调用执行客户端 newPayload / executePayload;
+  :执行客户端按顺序执行 Payload 中的交易,\n更新执行状态 (账户余额, 存储, Logs, Receipts, BlockHash, StateRoot);
+  :执行结果返回给共识客户端,\n共识客户端校验 ExecutionPayload 的根哈希与期望值一致;
+  :通过 forkchoiceUpdated 等流程将新头部纳入最佳链,\n并最终通过 finality 规则完成确认;
+}
+
+stop
+
+@enduml

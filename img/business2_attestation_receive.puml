@@ -1,0 +1,35 @@
+@startuml business2_receive
+title Business 2 / 接收: Attestation 与聚合证明接收流程
+
+start
+
+partition "子网管理与订阅" {
+  :SubnetManager / maintainPersistentSubnets 启动;
+  :根据 duties 计算需要订阅的 attestation 子网列表;
+  :通过 subscribeToAttestationSubnet(subnet) 动态订阅子网;
+  :通过 subscribeToAggregateAndProof() 订阅聚合证明主题;
+}
+
+partition "从 attestation 子网接收" {
+  :在 beacon_attestation_N 主题上收到 Gossip 消息;
+  :attestationSubscriber 通过 sub.Next(ctx) 拉取消息;
+  :调用 validateAttestation(ctx, pid, msg, subnet) 进行验证;
+}
+
+partition "从 aggregate_and_proof 主题接收" {
+  :在 beacon_aggregate_and_proof 主题上收到 Gossip 消息;
+  :aggregateAndProofSubscriber 通过 sub.Next(ctx) 拉取消息;
+  :调用 validateAggregateAndProof(ctx, pid, msg) 进行验证;
+}
+
+partition "统一接收结果" {
+  if (验证结果 = ValidationAccept?) then (是)
+    :将 attestation / aggregate 交给本地池与后续处理\n(进入“验证与处理”业务子流程);
+  else (Ignore/Reject)
+    :丢弃消息, 如有需要调整 peer 评分;
+  endif
+}
+
+stop
+
+@enduml

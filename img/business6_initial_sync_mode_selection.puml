@@ -1,0 +1,61 @@
+@startuml business6_initial_sync_mode_selection
+Title Initial Sync / 初始同步模式判定 determineInitialSyncMode 细化流程
+
+start
+
+partition "入口" {
+  :Service.Start() 经过前置检查后;
+  :调用 mode, err := determineInitialSyncMode(ctx);
+}
+
+partition "Checkpoint Sync 配置检查" {
+  if (cfg.CheckpointSyncProvider != nil?) then (是)
+    :checkpoint, err := CheckpointSyncProvider.GetCheckpoint(ctx);
+    if (err == nil 且 checkpoint != nil) then (成功)
+      :log.Info("Starting checkpoint sync");
+      :返回 modeCheckpoint;
+      stop
+    endif
+  endif
+}
+
+partition "数据库头状态检查" {
+  :headState, err := DB.HeadState(ctx);
+  if (err != nil) then (出错)
+    :返回错误 (无法决定模式);
+    stop
+  endif
+
+  if (headState == nil) then (无状态)
+    :log.Info("Starting full sync from genesis");
+    :返回 modeFullSync;
+    stop
+  endif
+}
+
+partition "落后程度与 EL 健康检查" {
+  :currentSlot := slots.Since(GenesisTime);
+  :headSlot := headState.Slot();
+  :slotsBehind := currentSlot - headSlot;
+
+  if (slotsBehind > SlotsPerEpoch * 2) then (落后很多)
+    :检查执行层健康 ExecutionEngine.IsHealthy(ctx);
+    if (!IsHealthy) then (EL 不健康)
+      :log.Info("Starting optimistic sync (EL not ready)");
+      :返回 modeOptimistic;
+      stop
+    else (EL 正常)
+      :log.WithField("slotsBehind", slotsBehind).Info("Starting catch-up sync");
+      :返回 modeFullSync;
+      stop
+    endif
+  else (未明显落后)
+    :log.Info("Node is synced");
+    :返回 modeNonSync;
+    stop
+  endif
+}
+
+stop
+
+@enduml

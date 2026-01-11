@@ -1,0 +1,83 @@
+@startuml business6_initial_sync_round_robin
+Title Initial Sync / Round-Robin Full Sync 细化流程 (roundRobinSync.start)
+
+start
+
+partition "初始化 roundRobinSync" {
+  :roundRobinSync.start() 入口;
+  :currentSlot := Chain.HeadSlot();
+  :targetSlot := slots.Since(GenesisTime);
+  :log currentSlot, targetSlot;
+  :initBatches(currentSlot, targetSlot);
+}
+
+partition "initBatches(startSlot, targetSlot)" {
+  :batchSize := SlotsPerEpoch * 2 (例如 64 slots);
+  :batches := 空 map[startSlot]*batch;
+  repeat
+    :为区间 [slot, min(slot+batchSize-1, targetSlot)]\n创建 batch 结构:
+    - startSlot, endSlot
+    - state = batchInit
+    - peer = 空
+    :slot += batchSize;
+  repeat while (slot < targetSlot)
+  :log.Info("Initialized batches", totalBatches=len(batches));
+}
+
+partition "启动 Fetch Workers" {
+  :workers := 8 (或配置值);
+  :为 i in [0, workers) 启动 goroutine fetchWorker();
+}
+
+partition "fetchWorker 循环" {
+  :ticker := 200ms 周期;
+  repeat
+    :等待 ticker.C;
+    :b := getNextBatch() 选择下一个需要 fetch 的 batch\n(state=batchInit 或需要重试的); 
+    if (b == nil) then (无可用 batch)
+      :continue;
+    endif
+
+    :pid := selectPeer(b);
+    if (pid == "") then (无合适 peer)
+      :resetBatch(b) 以便下次重试;
+      :continue;
+    endif
+
+    :markBatchFetching(b, pid);
+    :blocks, err := requestBlocks(ctx, pid, b.startSlot, b.endSlot);
+    if (err != nil) then (请求失败)
+      :handleFetchError(b, pid); // 增加重试计数 / 更换 peer;
+      :continue;
+    endif
+
+    :saveBatchBlocks(b, blocks); // 填充 b.blocks, state=batchFetched;
+  repeat while (ctx 未取消)
+}
+
+partition "requestBlocks(ctx, pid, startSlot, endSlot)" {
+  :count := endSlot - startSlot + 1;
+  :req := BeaconBlocksByRangeRequest{StartSlot=startSlot, Count=count, Step=1};
+  :stream, err := P2P.Send(ctx, req, BeaconBlocksByRangeV2, pid);
+  if (err != nil) then (建立流失败)
+    :返回错误;
+  endif
+  :循环读取 stream.ReadMsg(block) 收集 blocks 列表;
+  :validateBlocksResponse(blocks, startSlot, count);
+  :返回 blocks;
+}
+
+partition "处理 Batches processBatches" {
+  :processBatches():
+  - 周期性检查 batches map
+  - 按 startSlot 排序选择 state=batchFetched 的 batch -> 标记 batchProcessing
+  - 对 batch.blocks 中每个 SignedBeaconBlock 执行:
+    · 基本格式验证 + 签名验证 + 状态转换验证\n    · 写入 BeaconDB, 更新 ForkChoiceHead
+  - 处理完成后将 batch.state= batchProcessed;
+  :当全部 batchProcessed 且接近 targetSlot 时,
+  由上层 monitorSyncStatus 判断是否完成 Initial Sync;
+}
+
+stop
+
+@enduml

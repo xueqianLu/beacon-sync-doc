@@ -1,0 +1,38 @@
+@startuml business6_initial_sync_transition_regular
+Title Initial Sync / 切换到 Regular Sync 细化流程
+
+start
+
+partition "同步状态监控" {
+  :Initial Sync / Full Sync / Checkpoint Sync 期间;
+  :启动 monitorSyncStatus() 或 checkSyncStatus() 后台任务;
+}
+
+partition "checkSyncStatus() 逻辑" {
+  repeat
+    :currentSlot := chain.CurrentSlot();
+    :headSlot := chain.HeadSlot();
+    if (currentSlot - headSlot < SlotsPerEpoch) then (接近 head)
+      :status = synced;
+      :log.Info("Initial sync complete, switching to regular sync");
+      :setInitialSyncComplete();
+      :更新内部状态机: 从 initialSync -> synced;
+      :通知 RegularSync 组件可以完全接管区块处理\n(通过 Gossip 为主, Req/Resp 为辅);
+      break
+    else (仍然落后)
+      :保持 initialSync 状态, 继续 Round-Robin / Checkpoint Catch-up;
+    endif
+    :sleep(一个 slot 或配置的检查周期);
+  repeat while (未标记 synced 且 ctx 未取消)
+}
+
+partition "Regular Sync 接管" {
+  :RegularSync.registerSubscribers() 确保订阅所有必要 Gossip 主题;
+  :开始通过 beacon_block gossip 处理实时区块;
+  :可能并行运行 maintainSync() 检查是否再次落后,
+   必要时触发 requestMissingBlocks 或重新进入 catch-up 模式;
+}
+
+stop
+
+@enduml

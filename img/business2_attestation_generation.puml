@@ -1,0 +1,42 @@
+@startuml business2_generation
+title Business 2 / 生成: Attestation 与聚合证明生成流程
+
+start
+
+:'从共识层获取验证者职责 (duties)';
+:确定当前 epoch/slot、committeeIndex、子网等信息;
+
+:'在目标 slot 到来时';
+:根据 forkchoice 头部和链状态构造 AttestationData\n(BeaconBlockRoot, Source, Target, Slot, CommitteeIndex);
+
+:'设置 aggregation bits';
+:根据委员会位置为自身索引设置单个 bit = 1; 
+:构造 aggregationBits, 长度 = committeeSize;
+
+:'签名基础 attestation';
+:计算 DomainBeaconAttester 签名域;
+:对 AttestationData 进行 HashTreeRoot 得到 dataRoot;
+:计算 signing_root(dataRoot, domain);
+:使用验证者私钥对 signing_root 签名 -> Signature;
+:得到单个 Signed Attestation;
+
+if (验证者被选为 aggregator?) then (是)
+  :'选择聚合者';
+  :计算 selection proof (DomainSelectionProof, slot 为消息);
+  :使用 selection proof + 随机函数判断是否命中聚合者阈值;
+
+  :'执行本地聚合';
+  :从本地收到的同一数据的 attestations 中聚合 aggregationBits;
+  :聚合各 attester 的 BLS 签名得到 aggregateSignature;
+
+  :'构造 AggregateAndProof';
+  :设置 AggregatorIndex, Aggregate(Attestation), SelectionProof;
+  :对 AggregateAndProof 结构进行签名, 得到\nSignedAggregateAttestationAndProof;
+endif
+
+:'将生成的 Attestation / AggregateAndProof 写入本地队列';
+:交由 P2P 广播模块处理 (进入“发出”流程);
+
+stop
+
+@enduml

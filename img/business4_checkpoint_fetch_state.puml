@@ -1,0 +1,40 @@
+@startuml business4_checkpoint_fetch_state
+Title Checkpoint Sync / 获取 Checkpoint State 细化流程
+
+start
+
+partition "入口: startFromCheckpoint" {
+  :Service.startFromCheckpoint();
+  :读取配置 s.cfg.CheckpointSyncURL;
+  :调用 loadCheckpointState(s.cfg.CheckpointSyncURL);
+}
+
+partition "loadCheckpointState(url)" {
+  :fetchCheckpoint(url) 从远程 Beacon API 获取 finalized checkpoint\n(根、epoch 等);
+  if (fetchCheckpoint 返回错误?) then (是)
+    :返回错误, 终止 Checkpoint Sync;
+    stop
+  endif
+
+  :fetchState(url, checkpoint.Root) 获取对应的 BeaconState;
+  if (fetchState 返回错误?) then (是)
+    :返回错误, 终止 Checkpoint Sync;
+    stop
+  endif
+
+  :计算 st.HashTreeRoot(ctx) 得到 stateRoot;
+  if (stateRoot != checkpoint.Root?) then (是)
+    :返回 "state root mismatch" 错误;
+    stop
+  endif
+
+  :返回通过校验的 BeaconState st;
+}
+
+partition "后续调用方" {
+  :startFromCheckpoint 收到 st 后继续执行 initFromState(st);
+}
+
+stop
+
+@enduml

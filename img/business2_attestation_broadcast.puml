@@ -1,0 +1,34 @@
+@startuml business2_broadcast
+title Business 2 / 发出: Attestation 与聚合证明广播流程
+
+start
+
+:'收到待广播的 SignedAttestation / SignedAggregateAttestationAndProof';
+:根据消息类型选择 gossip 主题;
+
+if (普通 attestation?) then (是)
+  :根据 (committeeIndex, slot) 计算子网\ncomputeSubnetForAttestation;
+  :构造 /eth2/{fork_digest}/beacon_attestation_{subnet}/{encoding};
+else (聚合证明)
+  :使用 AggregateAndProofTopic()\n/eth2/{fork_digest}/beacon_aggregate_and_proof/{encoding};
+endif
+
+:'确保已加入对应主题';
+if (主题已在 joinedTopics 中?) then (是)
+  :复用现有 pubsub.Topic;
+else (否)
+  :调用 P2P.PubSub().Subscribe / JoinTopic 加入主题;
+endif
+
+:'编码与发送';
+:使用 SSZ 序列化消息为字节数组;
+:使用 Snappy 压缩以满足网络带宽与大小限制;
+:调用 pubsub.Topic.Publish(ctx, payload) 发送消息;
+
+:'本地广播后处理';
+:记录 metrics (如 每秒广播数 / topic 覆盖度);
+:日志记录: slot、委员会、子网、消息类型;
+
+stop
+
+@enduml

@@ -1,0 +1,52 @@
+@startuml business2_processing
+title Business 2 / 验证与处理: Attestation 与聚合证明验证流程
+
+start
+
+partition "Attestation 基础验证" {
+  :从 validateAttestation 收到解码后的 Attestation + subnet;
+  :检查 slot 是否在 [currentEpoch-1, currentEpoch] 范围内;
+  :检查 attSlot 不超过当前 slot, 不来自未来;
+  :根据 (committeeIndex, slot) 计算 expectedSubnet;
+  if (expectedSubnet != 实际 subnet?) then (是)
+    :返回 ValidationReject (错误子网);
+    stop
+  endif
+  :检查 target epoch 是否等于 slot epoch;
+  :检查引用的 beacon_block_root 是否在 BeaconDB 或 ForkChoiceStore 中存在;
+}
+
+partition "Attestation 聚合位与签名验证" {
+  :validateAggregationBits 检查 aggregationBits.Count() == 1\n且长度等于委员会大小;
+  :从链上获取对应 slot + committeeIndex 的委员会成员列表;
+  :根据 aggregationBits 确定 attesterIndex;
+  :获取 attester 的公钥 ValidatorPubKey(attesterIndex);
+  :计算 DomainBeaconAttester 签名域;
+  :对 AttestationData 做 HashTreeRoot 得到 dataRoot;
+  :computeSigningRoot(dataRoot, domain);
+  :使用 BLS 验证签名是否有效;
+  if (签名无效?) then (是)
+    :返回 ValidationReject;
+    stop
+  endif
+  :生成 attRoot, 检查 / 标记 hasSeenAttestation(attRoot);
+}
+
+partition "AggregateAndProof 验证" {
+  :validateAggregateAndProof 解码 SignedAggregateAttestationAndProof;
+  :validateAggregateBasics 做基础检查 (slot 范围等);
+  :验证 aggregatorIndex 是否在对应委员会中;
+  :validateSelectionProof 验证 selection proof 签名\n并检查是否通过随机选择条件;
+  :validateAggregateSignature 对聚合签名进行群体验证\n(聚合公钥 + aggregated signature);
+  :validateAggregatorSignature 验证聚合者对 AggregateAndProof 的签名;
+}
+
+partition "写入池与后续使用" {
+  :对通过验证的单个 attestation 标记 seen,\n并放入 Attestation Pool;
+  :对通过验证的 aggregate 放入 Aggregate Pool\n(供 proposer 打包或进一步传播);
+  :当 proposer 构建区块时, 从池中选取合格的 attestations\n与 aggregates 填充区块 body;
+}
+
+stop
+
+@enduml

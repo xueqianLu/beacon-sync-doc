@@ -1,0 +1,38 @@
+@startuml business1_receive
+title Business 1 / 接收: 区块接收与路由细化流程
+
+start
+
+partition "从 Gossipsub 接收" {
+  :Gossipsub 在 beacon_block 主题上收到消息;
+  :调用注册的 topic validator (validateBeaconBlockPubSub);
+  :解码消息字节 -> SignedBeaconBlock (SSZ + Snappy 解压);
+  if (基础验证失败?) then (是)
+    :返回 ValidationReject / Ignore 并停止处理;
+    stop
+  else (否)
+    :继续, 将消息交给订阅者;
+  endif
+  :beaconBlockSubscriber 从 pubsub.Subscription 读取消息;
+}
+
+partition "从 Req/Resp 接收" {
+  :本地节点作为客户端发起 BlocksByRange / BlocksByRoot 请求;
+  :远端 peer 通过 Req/Resp 流返回一批区块;
+  :processRequestedBlock 针对每个 SignedBeaconBlock 计算 block_root;
+}
+
+partition "统一路由" {
+  :对每个接收到的区块调用 sync.Service.receiveBlock(ctx, block, block_root);
+  if (hasSeenBlockRoot(block_root)?) then (已见)
+    :忽略本次区块 (防重复);
+    stop
+  else (未见)
+    :markSeenBlockRoot(block_root);
+    :将区块送入验证与处理 pipeline;
+  endif
+}
+
+stop
+
+@enduml

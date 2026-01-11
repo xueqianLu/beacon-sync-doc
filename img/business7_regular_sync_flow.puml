@@ -1,0 +1,83 @@
+@startuml business7_regular_sync
+Title Regular Sync 业务主线: 从 Initial 切换 -> 订阅 Gossip -> 实时处理新区块 -> 处理缺失父块 -> 保持与网络同步
+
+start
+
+partition "从 Initial 切换到 Regular Sync" {
+  :Initial Sync / Checkpoint Sync 完成后;
+  :checkTransitionToRegularSync():
+  - currentSlot := chain.CurrentSlot()
+  - headSlot := chain.HeadSlot()
+  - 若 currentSlot - headSlot < SlotsPerEpoch 则:
+    · setInitialSyncComplete()
+    · log.Info("Transitioned to regular sync");
+}
+
+partition "订阅 Gossipsub 主题" {
+  :RegularSync.registerSubscribers():
+  - subscribeToBlocks() 订阅 beacon_block 主题
+  - subscribeToAggregateAndProof() 等其他主题
+  - manageAttestationSubnets() 动态 attestation 子网
+  :subscribeToBlocks():
+  - topic := P2P.BlockTopic()
+  - blockSub := P2P.PubSub().Subscribe(topic)
+  - 启动 beaconBlockSubscriber(ctx, blockSub) 循环读取消息;
+}
+
+partition "接收新区块并快速路径处理" {
+  :beaconBlockSubscriber(ctx, sub):
+  - 循环调用 sub.Next(ctx) 取 Gossip 消息
+  - 将原始消息 decode 为 SignedBeaconBlock
+
+  :对每个 signed 调用 hasParent(signed);
+  if (hasParent == true) then (有父块)
+    :快速路径: 直接调用 chain.ReceiveBlock(ctx, signed, blockRoot);
+    :ReceiveBlock 内部执行 Block Processing Pipeline
+      (参见 Block Processing 章节: 基本验证/签名/状态转换/forkchoice 更新);
+  else (父块缺失)
+    :慢速路径: addToPendingQueue(signed);
+  endif
+}
+
+partition "Pending 队列与缺失父块处理" {
+  :addToPendingQueue(signed):
+  - 将区块按 slot/root 存入 pending 队列结构
+  - 记录 parentRoot -> 子块映射
+  - 异步触发请求父块 (Req/Resp BlocksByRoot / BlocksByRange)
+
+  :当父块通过 Gossip 或 Req/Resp 抵达时:
+  - 正常通过 ReceiveBlock 处理父块
+  - 调用 processPendingBlocks(parentRoot)
+    · 查找所有以 parentRoot 为父的 pending blocks
+    · 按 slot 排序后依次再次调用 ReceiveBlock
+}
+
+partition "实时性与早期拒绝 (Early Rejection)" {
+  :validateBlockTime(block):
+  - blockSlot := block.Block().Slot()
+  - currentSlot := chain.CurrentSlot()
+  - 若 blockSlot > currentSlot+1 => "block is too far in the future"
+  - 若 blockSlot + PropagationRange < currentSlot => "block is too old"
+
+  :validateBeaconBlockPubSub(ctx, msg):
+  - 若 hasSeenBlock(msg.ID) => ValidationIgnore
+  - quickValidateSlot(msg.Data) 失败 => ValidationReject
+  - 否则进入 fullValidateBlock(ctx, msg):\n    · 基础检查 (slot 范围 / proposerIndex / finalized 之前)\n    · 签名验证\n    · 状态转换验证\n    · 执行 payload 验证 (post-merge)
+}
+
+partition "保持同步状态 maintainSync" {
+  :maintainSync():
+  - 每 12s (1 slot) 触发一次检查
+  - isFallingBehind():
+    · currentSlot := chain.CurrentSlot()
+    · headSlot := chain.HeadSlot()
+    · 若 currentSlot - headSlot > 2 * SlotsPerEpoch\n      视为 Falling Behind
+  if (isFallingBehind == true) then (落后较多)
+    :log.Warn("Falling behind, may need to resync");
+    :requestMissingBlocks():\n    · 通过 Req/Resp 向 peers 主动请求缺失区块\n    · 可能触发重新进入 Initial / Catch-up Sync 流程;
+  endif
+}
+
+stop
+
+@enduml

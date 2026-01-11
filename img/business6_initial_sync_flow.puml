@@ -1,0 +1,104 @@
+@startuml business6_initial_sync
+Title 初始同步 (Initial Sync) 业务主线: 启动 -> 模式判定 -> 执行同步 (Full / Checkpoint / Optimistic) -> Round-Robin 拉块 -> 切换 Regular Sync
+
+start
+
+partition "节点启动与前置条件" {
+  :beacon 节点进程启动;
+  :Initial Sync Service.Start() 被调用;
+  :waitForChainStart() 等待创世时间 (genesis) 到达;
+  :waitForMinimumPeers() 等待达到最小 peer 数量 (MinPeersToSync);
+  if (!needsInitialSync()) then (不需要)
+    :日志: "Node is already synced";
+    stop
+  endif
+}
+
+partition "确定初始同步模式 determineInitialSyncMode" {
+  :调用 determineInitialSyncMode(ctx) 返回 syncMode;
+  :检查 CheckpointSyncProvider:
+  - CheckpointSyncProvider.GetCheckpoint(ctx)
+  - 若成功获取可信 checkpoint -> modeCheckpoint;
+  if (modeCheckpoint) then (是)
+    :log.Info("Starting checkpoint sync");
+  else (否)
+    :从 DB.HeadState(ctx) 读取 headState;
+    if (headState == nil) then (无状态)
+      :log.Info("Starting full sync from genesis");
+      :modeFullSync;
+    else (已有状态)
+      :currentSlot := slots.Since(GenesisTime);
+      :headSlot := headState.Slot();
+      :slotsBehind := currentSlot - headSlot;
+      if (slotsBehind > SlotsPerEpoch*2) then (落后很多)
+        if (!ExecutionEngine.IsHealthy(ctx)) then (EL 不健康)
+          :log.Info("Starting optimistic sync (EL not ready)");
+          :modeOptimistic;
+        else (EL 正常)
+          :log.Info("Starting catch-up sync");
+          :modeFullSync;
+        endif
+      else (未明显落后)
+        :log.Info("Node is synced");
+        :modeNonSync;
+      endif
+    endif
+  endif
+}
+
+partition "根据模式执行初始同步" {
+  if (modeNonSync) then (已同步)
+    :markSynced();
+    stop
+  elseif (modeCheckpoint) then (Checkpoint Sync)
+    :调用 checkpointSync();
+    if (checkpointSync 失败?) then (是)
+      :log.Error("Checkpoint sync failed, falling back to full sync");
+      :mode = modeFullSync;
+      :roundRobinSync.start();
+    else (否)
+      :Checkpoint Sync 完成后, 继续向 head 同步\n(详见 Checkpoint Sync 业务线);
+    endif
+  elseif (modeOptimistic) then (Optimistic Sync)
+    :调用 optimisticSync();
+  elseif (modeFullSync) then (Full Sync)
+    :调用 roundRobinSync.start();
+  endif
+
+  :并行启动 monitorSyncStatus()/checkSyncStatus()\n监控与 head 的 slot 差距, 触发切换 Regular Sync;
+}
+
+partition "Round-Robin Full Sync (roundRobinSync.start)" {
+  :currentSlot := Chain.HeadSlot();
+  :targetSlot := slots.Since(GenesisTime);
+  :initBatches(currentSlot, targetSlot) 按 [startSlot, endSlot] 创建所有 batch;
+  :为每个 batch 初始化状态 batchInit;
+
+  :启动 N 个 fetchWorker() 并行下载;
+  repeat
+    :fetchWorker 周期性执行:
+    - getNextBatch() 取下一个需要 fetch 的 batch\n  (state=batchInit 或需要重试);
+    - selectPeer(b) 从 P2P.Peers 中选出有足够 finalizedEpoch、\n  未过载的 peer;
+    - requestBlocks(ctx, pid, b.startSlot, b.endSlot) 发送\n  BeaconBlocksByRange 请求;
+    - 读取响应流 stream.ReadMsg(block) 收集区块列表;
+    - validateBlocksResponse(blocks, startSlot, count);
+    - saveBatchBlocks(b, blocks) 标记 batchFetched;
+  repeat while (仍有未完成的 batch)
+
+  :processBatches() 顺序处理 batch:
+  - 按 startSlot 排序 batches;
+  - 对每个 batch 中的 SignedBeaconBlock 执行:\n    · 基础验证 + 签名验证 + 状态转换验证\n    · 写入 BeaconDB, 更新 ForkChoiceHead;
+  :当所有 batchProcessed 且与 targetSlot 接近时,\nmonitorSyncStatus 检测并切换到 Regular Sync;
+}
+
+partition "切换到 Regular Sync" {
+  :checkSyncStatus() 周期检查 currentSlot 与 headSlot 差距;
+  if (currentSlot - headSlot < SlotsPerEpoch) then (接近 head)
+    :status = synced;
+    :log.Info("Initial sync complete, switching to regular sync");
+  endif
+}
+
+stop
+
+@enduml

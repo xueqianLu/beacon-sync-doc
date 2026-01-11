@@ -1,0 +1,34 @@
+@startuml business1_broadcast
+title Business 1 / 发出: 区块广播与请求细化流程
+
+start
+
+:'收到待广播区块 (来自生成流程)';
+:根据区块类型 / fork_digest 选择 gossip 主题\n(例如 /eth2/{fork_digest}/beacon_block/{encoding});
+
+if (节点已加入该主题?) then (是)
+  :复用已缓存的 pubsub.Topic 实例;
+else (否)
+  :通过 P2P Service.JoinTopic 创建 / 加入主题;
+endif
+
+:'Gossipsub 广播路径';
+:使用 SSZ 编码区块为字节数组;
+:使用 Snappy 对字节数组进行压缩;
+:通过 pubsub.Topic.Publish 广播到整个网状拓扑;
+
+if (需要通过 Req/Resp 提供历史区块?) then (是)
+  :'Req/Resp 服务端路径';
+  :在本地存储中保证可按 slot / root 查询该区块;
+  :在 BlocksByRange / BlocksByRoot 等处理器中\n按请求范围/根返回区块数据;
+else (否)
+  :仅通过 Gossipsub 实时广播最新区块;
+endif
+
+:'广播后本地处理';
+:记录广播时间与 peers 覆盖情况 (metrics / 日志);
+:继续等待下一个 slot 的提议或其他职责;
+
+stop
+
+@enduml

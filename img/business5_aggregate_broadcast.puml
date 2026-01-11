@@ -1,0 +1,25 @@
+@startuml business5_agg_broadcast
+Title Aggregate & Proof / Gossip 广播 细化流程
+
+start
+
+partition "确定主题与编码" {
+  :上游产生 SignedAggregateAttestationAndProof 消息;
+  :通过 P2P Service.AggregateAndProofTopic()\n构造 gossip 主题 /eth2/{fork_digest}/beacon_aggregate_and_proof/{encoding};
+}
+
+partition "编码与发布 (Broadcaster)" {
+  :调用网络编码器 (如 SszNetworkEncoder.EncodeGossip):
+  - 将消息 SSZ 序列化为字节数组\n  - 使用 Snappy 压缩以控制大小;
+  :从 joinedTopics 缓存中获取对应 pubsub.Topic,\n若未加入则先 JoinTopic;
+  :调用 Topic.Publish(ctx, payload) 广播到 Gossipsub 网状网络;
+}
+
+partition "本地后续处理" {
+  :记录 metrics (例如 aggregate 广播速率、失败次数);
+  :日志: slot, committeeIndex, aggregatorIndex, root 等字段;
+}
+
+stop
+
+@enduml

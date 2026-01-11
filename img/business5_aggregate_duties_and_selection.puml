@@ -1,0 +1,33 @@
+@startuml business5_agg_selection
+Title Aggregate & Proof / 聚合者选举与职责发现 细化流程
+
+start
+
+partition "验证者职责发现" {
+  :验证者客户端通过共识节点获取 attestation duties\n(包括 slot, committeeIndex, 子网等);
+  :为每个 duty 记录对应 slot 和委员会位置;
+}
+
+partition "selection proof 计算" {
+  :在目标 slot 前, 候选验证者执行 selection proof 计算;
+  :构造签名域 DomainSelectionProof\n(使用 Aggregate.Data.Slot 对应的 epoch);
+  :对 slot 做 HashTreeRoot 得到 slotRoot;
+  :computeSigningRoot(slotRoot, domain) 得到 signingRoot;
+  :使用验证者私钥对 signingRoot 签名 -> selectionProof;
+}
+
+partition "是否被选为聚合者?" {
+  :本地根据 selectionProof 和委员会大小计算阈值:
+  - modulo := max(1, committeeSize / TargetAggregatorsPerCommittee);
+  - h := hash(selectionProof);
+  - 选中条件: littleEndian(h[0:8]) % modulo == 0;
+  if (满足选中条件?) then (是)
+    :将自己标记为该 slot/committee 的 aggregator;
+  else (否)
+    :保持为普通 attester, 仅生成单票;
+  endif
+}
+
+stop
+
+@enduml

@@ -1,0 +1,41 @@
+@startuml business4_checkpoint_overall
+Title Checkpoint Sync 业务主线: 获取 Checkpoint -> 初始化节点 -> 向 Head 同步 -> Backfill 回填
+
+start
+
+partition "获取 Checkpoint State (远程 API)" {
+  :运维/用户配置 --checkpoint-sync-url;
+  :Service.startFromCheckpoint 调用 loadCheckpointState(url);
+  :loadCheckpointState -> fetchCheckpoint(url) 获取 finalized checkpoint;
+  :loadCheckpointState -> fetchState(url, checkpoint.Root) 获取对应 state;
+  :比较 st.HashTreeRoot(ctx) 与 checkpoint.Root 校验 state root;
+}
+
+partition "从 Checkpoint 初始化本地节点" {
+  :startFromCheckpoint 收到 checkpoint state st;
+  :initFromState(st) 初始化本地 BeaconDB / ForkchoiceStore / 状态索引;
+  :记录弱主观性检查点 (weak subjectivity checkpoint) 元数据;
+}
+
+partition "从 Checkpoint 向 Head 前向同步" {
+  :确定 checkpointSlot = st.Slot();
+  :调用 syncFromSlot(checkpointSlot + 1);
+  :通过 Status 协议与 peers 对齐 head / finalized / forkDigest;
+  :选择合适同步 peer, 使用 BlocksByRange / BlocksByRoot\n批量拉取后续区块;
+  :对每个区块执行验证与状态转换, 更新 forkchoice head;
+  :直到与网络当前 head / finalized 对齐 (进入 Regular/Optimistic Sync 模式);
+}
+
+partition "Backfill 历史回填 (可选)" {
+  :若启用 --enable-experimental-backfill;
+  :backfill() 从 checkpointSlot 向 Genesis 方向批量回填;
+  :循环 currentSlot <- getCheckpointSlot();
+  :计算 [batchStart, batchEnd] 范围;
+  :requestBackfillBatch(batchStart, batchEnd) 从 peers 请求历史 blocks;
+  :saveBlocks(blocks) 将历史区块写入数据库;
+  :更新 currentSlot = batchStart, 直至到达 Genesis;
+}
+
+stop
+
+@enduml
