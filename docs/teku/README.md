@@ -31,7 +31,7 @@
 - [第 5 章: 协议协商](./chapter_05_protocol_negotiation.md)
 - [第 6 章: 节点发现](./chapter_06_node_discovery.md)
 
-#### 第三部分：Req/Resp 协议 (4/6) 🚧
+#### 第三部分：Req/Resp 协议 (4/6) ✅
 - [第 7 章: Req/Resp 协议基础](./chapter_07_reqresp_basics.md) ⭐
 - [第 8 章: Status 协议](./chapter_08_status_protocol.md) ⭐
 - [第 9 章: BeaconBlocksByRange](./chapter_09_blocks_by_range.md) ⭐
@@ -93,3 +93,17 @@ networking/eth2/                # Eth2 网络层
 
 **最后更新**: 2026-01-13  
 **当前进度**: 10/45 章 (22.2%)
+
+#### 第四部分：Gossipsub 协议 (6/6) ✅
+- [第 11 章: Gossipsub 概述](./chapter_11_gossipsub_overview.md) ⭐
+- [第 12 章: BeaconBlockTopicHandler](./chapter_12_block_topic_handler.md) ⭐
+- [第 13 章: Gossip 主题管理](./chapter_13_gossip_topics.md) ⭐
+- [第 14 章: 消息验证流程](./chapter_14_message_validation.md) ⭐
+- [第 15 章: Peer 评分系统](./chapter_15_peer_scoring.md) ⭐
+- [第 16 章: 性能优化](./chapter_16_performance_optimization.md) ⭐
+
+#### 第五部分：初始同步 (4/4) ✅
+- [第 17 章: Initial Sync 概述](./chapter_17_initial_sync_overview.md) ⭐
+- [第 18 章: Full Sync 实现](./chapter_18_full_sync.md) ⭐
+- [第 19 章: Checkpoint Sync](./chapter_19_checkpoint_sync.md) ⭐
+- [第 20 章: Optimistic Sync](./chapter_20_optimistic_sync.md) ⭐
