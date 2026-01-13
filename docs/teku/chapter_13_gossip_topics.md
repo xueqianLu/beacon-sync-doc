@@ -54,3 +54,102 @@ public class DynamicSubscriptionManager {
 ---
 
 **最后更新**: 2026-01-13
+
+---
+
+## 13.2 主题管理器
+
+### TopicSubscriptionManager
+
+```java
+public class TopicSubscriptionManager {
+  private final GossipNetwork gossipNetwork;
+  private final Set<Bytes4> subscribedForkDigests = new ConcurrentHashSet<>();
+  
+  public void subscribeToBlocks(Bytes4 forkDigest) {
+    String topic = GossipTopics.getBeaconBlockTopic(forkDigest);
+    gossipNetwork.subscribe(topic, blockHandler);
+    subscribedForkDigests.add(forkDigest);
+  }
+  
+  public void subscribeToAttestationSubnets(
+      Bytes4 forkDigest, Set<Integer> subnets) {
+    
+    for (Integer subnet : subnets) {
+      String topic = GossipTopics.getAttestationSubnetTopic(
+        forkDigest, subnet);
+      gossipNetwork.subscribe(topic, attestationHandler);
+    }
+  }
+}
+```
+
+### 主题命名规范
+
+```
+/eth2/{fork_digest}/{name}/{encoding}
+
+示例:
+/eth2/4a26c58b/beacon_block/ssz_snappy
+/eth2/4a26c58b/beacon_aggregate_and_proof/ssz_snappy
+/eth2/4a26c58b/beacon_attestation_{subnet_id}/ssz_snappy
+```
+
+---
+
+## 13.3 动态订阅
+
+```java
+public class DynamicSubnetSubscriber {
+  private static final int SUBNETS_PER_NODE = 2;
+  private static final Duration SUBSCRIPTION_DURATION = 
+    Duration.ofHours(256);
+  
+  public void updateSubscriptions() {
+    Set<Integer> requiredSubnets = calculateRequiredSubnets();
+    Set<Integer> currentSubnets = getC\urrentSubscriptions();
+    
+    // 订阅新 subnet
+    Sets.difference(requiredSubnets, currentSubnets)
+      .forEach(this::subscribeToSubnet);
+    
+    // 取消旧 subnet
+    Sets.difference(currentSubnets, requiredSubnets)
+      .forEach(this::unsubscribeFromSubnet);
+  }
+  
+  private Set<Integer> calculateRequiredSubnets() {
+    // 基于本地验证者计算需要的 subnet
+    return validators.stream()
+      .map(this::getValidatorSubnet)
+      .collect(Collectors.toSet());
+  }
+}
+```
+
+---
+
+## 13.4 与 Prysm 对比
+
+| 维度 | Prysm | Teku |
+|------|-------|------|
+| 主题管理 | pubsubTopicMappings | TopicSubscriptionManager |
+| 动态订阅 | updateSubnetSubscriptions | DynamicSubnetSubscriber |
+| Fork管理 | digest.New() | ForkDigestCalculator |
+
+**Prysm 代码**:
+```go
+func (s *Service) subscribeDynamicWithSubnets(
+    epoch primitives.Epoch, subnets []uint64) {
+  
+  for _, subnet := range subnets {
+    topic := p2p.GossipTypeMapping[p2p.GossipAttestationMessage]
+    fullTopic := fmt.Sprintf(topic, s.cfg.p2p.Encoding().ProtocolSuffix(), subnet)
+    s.cfg.p2p.PubSub().Subscribe(fullTopic, ...)
+  }
+}
+```
+
+---
+
+**最后更新**: 2026-01-13
