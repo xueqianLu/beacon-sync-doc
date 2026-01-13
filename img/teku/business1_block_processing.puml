@@ -1,0 +1,81 @@
+@startuml business1_block_processing
+title B1 Block Processing (Teku - 三阶段异步管道)
+
+start
+
+:BlockValidator.validate(block);
+
+partition "Stage 1: 预验证" {
+  :SafeFuture.of(() -> {
+    preValidate(block);
+  })|
+  
+  :检查结构完整性;
+  :检查 proposer index 有效;
+  :检查 slot 范围;
+  
+  if (预验证通过?) then (否)
+    :返回 REJECT;
+    stop
+  endif
+}
+
+partition "Stage 2: 签名验证" {
+  :thenCompose:
+  BatchSignatureVerifier.verify()|
+  
+  :添加到批量验证队列;
+  
+  if (队列大小 >= 64?) then (是)
+    :立即批量验证 (BLS.batchVerify);
+  else (否)
+    :等待 100ms 后批量验证;
+  endif
+  
+  if (签名有效?) then (否)
+    :返回 REJECT + 惩罚 peer;
+    stop
+  endif
+}
+
+partition "Stage 3: 状态转换" {
+  :thenCompose:
+  检查父块;
+  
+  if (父块存在?) then (否)
+    :返回 SAVE_FOR_FUTURE;
+    :添加到 PendingBlocksCache;
+    :FetchRecentBlocksService.fetchParent();
+    stop
+  endif
+  
+  :getParentState();
+  :spec.processBlock(parentState, block)|
+  note right: 执行状态转换
+  
+  if (状态转换成功?) then (否)
+    :返回 REJECT;
+    stop
+  endif
+}
+
+partition "导入与持久化" {
+  :thenCompose:
+  BlockImporter.importBlock()|
+  
+  :写入 Database;
+  :更新 RecentChainData;
+  
+  :ForkChoice.onBlock()|
+  note right: 更新 fork choice 权重
+  
+  :processHead()|
+  note right: 可能触发 head 变更
+  
+  :EventBus.post(BlockImportedEvent);
+}
+
+:返回 BlockImportResult.successful();
+
+stop
+@enduml

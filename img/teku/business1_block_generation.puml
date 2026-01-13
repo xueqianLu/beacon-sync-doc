@@ -1,0 +1,33 @@
+@startuml business1_block_generation
+title B1 Block Generation (Teku - SafeFuture 异步流水线)
+
+start
+:收到出块请求 (Slot duty);
+
+:BlockProposalOrchestrator.createBlock();
+
+partition "SafeFuture 链式调用" {
+  :executionEngine.getPayload(payloadId)|
+  note right: Engine API: engine_getPayloadV2
+  
+  :thenCompose: blockFactory.createBlock()|
+  note right
+    - 构建 BeaconBlock
+    - 填充 Attestations
+    - 填充 Deposits
+  end note
+  
+  :thenCompose: collectAttestations()|
+  note right: 从 AttestationPool 获取
+  
+  :thenCompose: signatureService.sign()|
+  note right: BLS 签名 proposer + RANDAO
+  
+  :thenApply: eventBus.post(BlockProposedEvent)|
+  note right: 触发广播监听器
+}
+
+:返回 SafeFuture<SignedBeaconBlock>;
+
+stop
+@enduml

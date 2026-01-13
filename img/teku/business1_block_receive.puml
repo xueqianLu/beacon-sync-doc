@@ -1,0 +1,49 @@
+@startuml business1_block_receive
+title B1 Block Receive (Teku - TopicHandler 处理)
+
+start
+
+:GossipNetwork 收到消息;
+
+:BeaconBlockTopicHandler.handleMessage()|
+
+partition "解码" {
+  :Snappy 解压缩;
+  :SSZ 反序列化 -> SignedBeaconBlock;
+}
+
+partition "去重检查" {
+  :computeMessageId (SHA256)|
+  
+  if (SeenMessageTracker.isSeen?) then (是)
+    :返回 InternalValidationResult.IGNORE;
+    stop
+  else (否)
+    :markSeen();
+  endif
+}
+
+partition "快速预验证" {
+  :检查 Slot 有效性|
+  note right
+    currentSlot - SLOTS_PER_EPOCH 
+    < blockSlot 
+    <= currentSlot + CLOCK_DISPARITY
+  end note
+  
+  if (Slot 有效?) then (否)
+    :返回 IGNORE;
+    stop
+  endif
+  
+  :检查是否已知 block;
+  if (chainData.containsBlock?) then (是)
+    :返回 IGNORE;
+    stop
+  endif
+}
+
+:路由到 BlockValidator.validate();
+
+stop
+@enduml

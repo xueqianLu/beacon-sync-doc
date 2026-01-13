@@ -1,0 +1,48 @@
+@startuml business1_block_flow
+title Business 1: 区块生成 -> 区块发出 -> 区块接收 -> 区块处理 (Teku)
+
+partition 生成 {
+  :区块被提议/生成 (BlockProposalOrchestrator);
+  :获取 Execution Payload (ExecutionEngineClient);
+  :构建区块 (BlockFactory.createBlock);
+  :签名 (BLSSignatureService);
+  :触发事件 (EventBus.post BlockProposedEvent);
+}
+
+partition 发出 {
+  if (选择传播方式?) then (实时广播)
+    :Gossipsub (beacon_block);
+    :编码: SSZ -> Snappy;
+    :GossipNetwork.gossip();
+  else (历史/补发)
+    :Req/Resp (blocks by range);
+    :P2P.requestHandler 响应;
+  endif
+}
+
+partition 接收 {
+  :网络: GossipNetwork / P2P;
+  :BeaconBlockTopicHandler;
+  if (去重检查 SeenMessageTracker) then (已见)
+    :返回 IGNORE;
+  else (未见)
+    :路由到 BlockValidator;
+  endif
+}
+
+partition 验证与处理 {
+  :Stage 1: 预验证 (结构/时间/字段);
+  :Stage 2: 签名验证 (BatchSignatureVerifier);
+  :Stage 3: 状态转换 (StateTransitionExecutor);
+  if (父块是否存在?) then (是)
+    :BlockImporter.importBlock();
+    :持久化 (Database);
+    :ForkChoice.onBlock();
+    :EventBus.post BlockImportedEvent;
+  else (否)
+    :PendingBlocksCache.add();
+    :FetchRecentBlocksService 请求父块;
+  endif
+}
+
+@enduml

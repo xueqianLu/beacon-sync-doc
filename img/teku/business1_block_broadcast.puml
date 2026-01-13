@@ -1,0 +1,36 @@
+@startuml business1_block_broadcast
+title B1 Block Broadcast (Teku - EventBus 驱动)
+
+start
+
+partition "EventBus 监听" {
+  :@Subscribe
+  onBlockProposed(BlockProposedEvent);
+  
+  :获取 SignedBeaconBlock;
+}
+
+partition "编码" {
+  :GossipEncoding.encode(block)|
+  note right
+    1. SSZ 序列化
+    2. Snappy 压缩
+  end note
+}
+
+partition "Gossipsub 发布" {
+  :GossipNetwork.gossip(
+    topic: /eth2/{fork_digest}/beacon_block/{encoding},
+    data: encoded)|
+  
+  :异步发送到所有订阅 peer;
+  
+  if (发送成功?) then (是)
+    :记录 Metrics;
+  else (否)
+    :LOG.error + exceptionally 处理;
+  endif
+}
+
+stop
+@enduml

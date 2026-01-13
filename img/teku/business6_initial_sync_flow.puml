@@ -1,0 +1,85 @@
+@startuml business6_initial_sync_flow
+title Business 6: Initial Sync 启动与模式选择 (Teku)
+
+start
+
+:节点启动;
+
+:加载配置 (BeaconChainConfiguration);
+
+partition "模式选择" {
+  if (配置了 initial-state?) then (是)
+    #LightBlue:Checkpoint Sync 模式;
+    
+    :CheckpointSyncService.start();
+    
+    if (URL 还是 File?) then (URL)
+      :downloadStateFromUrl();
+    else (File)
+      :loadStateFromFile();
+    endif
+    
+    :验证 Weak Subjectivity;
+    :初始化链状态;
+    :可选: 启动 Backfill;
+    
+  else (否)
+    :检查 ExecutionEngine 状态;
+    
+    if (EL 正在同步?) then (是)
+      #LightGreen:Optimistic Sync 模式;
+      
+      :OptimisticSyncService.start();
+      :允许导入未验证的区块;
+      :异步验证 Execution Payload;
+      
+    else (否)
+      #LightYellow:Full Sync 模式;
+      
+      :ForwardSyncService.start();
+      :从创世块/当前 Head 开始同步;
+    endif
+  endif
+}
+
+partition "同步执行" {
+  :连接到 Peers (P2P);
+  
+  if (有可用 Peers?) then (否)
+    :等待 Peer 连接;
+    note right
+      最多等待 30s
+      否则报告错误
+    end note
+  endif
+  
+  :选择最佳 Sync Peer;
+  note right
+    基于:
+    - Head slot
+    - Finalized epoch
+    - Peer score
+  end note
+  
+  :开始批量同步;
+  
+  repeat
+    :请求区块批次 (50 blocks);
+    :验证并导入;
+    :更新进度;
+  repeat while (未达到目标?) is (是)
+  
+  :同步完成;
+}
+
+partition "模式切换" {
+  if (Initial Sync 完成?) then (是)
+    :切换到 Regular Sync 模式;
+    :RegularSyncService.start();
+    :订阅 Gossipsub 主题;
+  endif
+}
+
+stop
+
+@enduml
