@@ -1,8 +1,8 @@
 # Jekyll configuration for GitHub Pages
 
 # Site settings
-title: "Beacon Node 同步模块详解"
-description: "深入解析以太坊Beacon节点同步机制 - 基于Prysm实现"
+title: "Ethereum Beacon 同步模块详解 - 多客户端实现"
+description: "深入对比主流以太坊客户端的Beacon节点同步机制"
 author: "xueqianLu"
 email: xueqian1991@gmail.com
 
@@ -48,8 +48,9 @@ exclude:
   - .bundle
   - .sass-cache
   - _site
-  - Prysm_Beacon.md
-  - beacon_node_sync_documentation.md
+  - CHECKLIST.md
+  - COMPLETION_SUMMARY.md
+  - LATEST_PROGRESS.md
 
 # Include
 include:
@@ -66,10 +67,14 @@ defaults:
 navigation:
   - title: 首页
     url: /
-  - title: 目录大纲
-    url: /beacon_sync_outline
-  - title: 代码参考
-    url: /code_references
+  - title: Prysm
+    url: /docs/prysm/
+  - title: Teku
+    url: /docs/teku/
+  - title: 客户端对比
+    url: /comparison/
+  - title: 共享资源
+    url: /shared/
   - title: 进度报告
     url: /PROGRESS
 

@@ -1,11 +1,10 @@
-# Beacon Node 同步模块详解
+# Ethereum Beacon 同步模块详解 - 多客户端实现
 
 [![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://xueqianLu.github.io/beacon-sync-doc/)
-[![Progress](https://img.shields.io/badge/Progress-62.2%25-green)](./PROGRESS.md)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-> 深入解析以太坊 Beacon 节点同步机制 - 基于 Prysm 实现
+> 深入对比主流以太坊客户端的 Beacon 节点同步机制
 
 ---
 
@@ -17,13 +16,30 @@
 
 ## 🎯 项目简介
 
-本项目是一份详尽的技术文档，深入讲解以太坊 2.0（PoS）Beacon 节点的同步模块设计与实现。
+本项目提供详尽的技术文档，深入讲解以太坊 PoS Beacon 节点的同步模块设计与实现，**覆盖多个主流客户端的对比分析**。
+
+### 支持的客户端
+
+| 客户端 | 语言 | 进度 | 文档入口 |
+|--------|------|------|----------|
+| **[Prysm](./docs/prysm/)** | Go | ✅ 28/45 章 (62.2%) | [查看文档](./docs/prysm/README.md) |
+| **[Teku](./docs/teku/)** | Java | 🚧 准备中 | [查看文档](./docs/teku/README.md) |
+| **Lighthouse** | Rust | 🔜 计划中 | - |
+| **Nimbus** | Nim | 🔜 计划中 | - |
+| **Lodestar** | TypeScript | 🔜 计划中 | - |
+
+### 📊 客户端对比分析
+
+- [同步策略对比](./comparison/sync_strategies.md) - Initial Sync、Regular Sync 实现差异
+- [实现差异分析](./comparison/implementation_diff.md) - 代码架构、设计模式对比
+- [协议实现对比](./comparison/) - Req/Resp、Gossipsub 细节对比
 
 ### 特色
 
-- ✅ **理论与实践结合**: 完整的理论体系 + Prysm 真实代码
+- ✅ **多客户端覆盖**: Prysm、Teku 及更多（持续增加）
+- ✅ **理论与实践结合**: 完整理论体系 + 真实代码实现
+- ✅ **横向对比分析**: 设计思路、性能差异一目了然
 - ✅ **深度与广度兼备**: 从基础到高级，覆盖全栈
-- ✅ **实用性强**: 配置示例、问题解答、性能优化
 
 ### 适合人群
 
@@ -31,55 +47,55 @@
 - 🏗️ 系统架构师
 - 🔧 节点运维人员
 - 📖 技术研究者
+- 🔍 客户端选型决策者
 
 ---
 
-## 📖 目录
+## 📖 快速导航
 
-### ✅ 已完成章节 (28/45)
+### 按客户端浏览
 
-#### [第一部分：基础概念与架构](./beacon_sync_outline.md) (100%)
+<table>
+<tr>
+<td width="50%">
 
-- [第 1 章: PoS 共识机制概述](./chapter_01_pos_overview.md)
-- [第 2 章: Beacon 节点架构](./chapter_02_beacon_architecture.md)
-- [第 3 章: 同步模块与 P2P 协同](./chapter_03_sync_module_design.md)
+#### 🟦 [Prysm (Go)](./docs/prysm/)
+- ✅ **28/45 章完成** (62.2%)
+- 基础概念 (1-6 章)
+- Req/Resp 协议 (7-10 章)
+- Gossipsub (11-16 章)
+- Initial Sync (17-20 章)
+- Regular Sync (21-24 章)
+- 辅助机制 (25-28 章)
 
-#### [第二部分：P2P 网络层基础](./beacon_sync_outline.md) (100%)
+[📖 开始阅读](./docs/prysm/README.md) | [📋 完整大纲](./docs/prysm/outline.md)
 
-- [第 4 章: libp2p 网络栈](./chapter_04_libp2p_stack.md)
-- [第 5 章: 协议协商](./chapter_05_protocol_negotiation.md)
-- [第 6 章: 节点发现(discv5)](./chapter_06_node_discovery.md)
+</td>
+<td width="50%">
 
-#### [第五部分：初始同步](./beacon_sync_outline.md) (100%)
+#### 🟧 [Teku (Java)](./docs/teku/)
+- 🚧 **准备中**
+- 框架已搭建
+- 代码研究进行中
+- 章节编写待开始
 
-- [第 17 章: Initial Sync 概述](./chapter_17_initial_sync_overview.md)
-- [第 18 章: Full Sync 实现](./chapter_18_full_sync.md)
-- [第 19 章: Checkpoint Sync](./chapter_19_checkpoint_sync.md)
-- [第 20 章: Optimistic Sync](./chapter_20_optimistic_sync.md)
+[📖 查看框架](./docs/teku/README.md)
 
-#### [第六部分：Regular Sync](./beacon_sync_outline.md) (100%)
+</td>
+</tr>
+</table>
 
-- [第 21 章: Regular Sync 概述](./chapter_21_regular_sync.md)
-- [第 22 章: Block Pipeline](./chapter_22_block_pipeline.md)
-- [第 23 章: 缺失父块处理](./chapter_23_missing_parent.md)
-- [第 24 章: Fork Choice 同步](./chapter_24_forkchoice_sync.md)
+### 📊 对比分析
 
-### 📋 计划中章节
+- [同步策略对比](./comparison/sync_strategies.md)
+- [实现差异分析](./comparison/implementation_diff.md)
+- [更多对比内容](./comparison/README.md)
 
-- 第八部分: 高级主题 (29-32 章，0/4)
-- 第九部分: 错误处理 (33-36 章，0/4)
-- 第十部分: 测试 (37-39 章，0/3)
-- 第十一部分: 实践指南 (40-43 章，0/4)
-- 第十二部分: 未来发展 (44-45 章，0/2)
+### 📚 共享资源
 
-查看完整大纲: [beacon_sync_outline.md](./beacon_sync_outline.md)
-
-### 📚 完整目录（含流程图附录）
-
-- 完整章节规划（1–45 章）：详见 [beacon_sync_outline.md](./beacon_sync_outline.md)
-- 已完成章节汇总视图：详见 [SUMMARY.md](./SUMMARY.md)
-- 同步相关业务流程图总览（区块/Attestation/执行层交易/Checkpoint Sync/Initial & Regular Sync 等）：
-  - [附录：同步相关流程图总览](./chapter_sync_flow_diagrams.md)
+- [PoS 基础知识](./shared/pos_fundamentals.md)
+- [术语表](./shared/glossary.md)
+- [更多通用内容](./shared/README.md)
 
 ---
 
@@ -116,37 +132,48 @@ bundle exec jekyll serve
 
 ---
 
-## 📊 文档统计
+## 📊 项目统计
 
 ```
-总章节数:    45章 (计划)
-已完成:      28章 (62.2%)
-总行数:      25,000+行
-文件大小:    ~850KB
-代码示例:    350+段
-流程图:      80+个
+客户端覆盖:   2/5 (Prysm ✅, Teku 🚧)
+Prysm 进度:   28/45 章 (62.2%)
+总行数:       25,000+ 行
+代码示例:     350+ 段
+流程图:       80+ 个
+对比分析:     持续增加中
 ```
 
 ---
 
 ## 🛠️ 技术栈
 
-- **参考实现**: [Prysm](https://github.com/OffchainLabs/prysm) v7
-- **协议规范**: [Ethereum Consensus Specs](https://github.com/ethereum/consensus-specs)
+### 参考实现
+- **Prysm**: [github.com/prysmaticlabs/prysm](https://github.com/prysmaticlabs/prysm) (Go)
+- **Teku**: [github.com/Consensys/teku](https://github.com/Consensys/teku) (Java)
+
+### 协议规范
+- **Consensus Specs**: [github.com/ethereum/consensus-specs](https://github.com/ethereum/consensus-specs)
 - **P2P 网络**: [libp2p](https://libp2p.io/)
 - **编码**: SSZ + Snappy
-- **文档工具**: Jekyll + GitHub Pages
+
+### 文档工具
+- **Jekyll** + **GitHub Pages**
 
 ---
 
 ## 📝 最近更新
 
-### 2026-01-04
+### 2026-01-13
+- 🔄 **重大重构**: 转型为多客户端文档中心
+- ✅ Prysm 文档迁移至 `docs/prysm/`
+- ✅ 创建 Teku 文档框架 `docs/teku/`
+- ✅ 新增客户端对比分析 `comparison/`
+- ✅ 新增共享通用内容 `shared/`
 
+### 2026-01-04
 - ✅ 新增第 3 章：同步模块与 P2P 的协同设计
 - ✅ 增强第 4 章：添加与同步集成章节
-- ✅ 准备 GitHub Pages 部署文件
-- ✅ 第一部分现已 100%完成！
+- ✅ Prysm 第一部分现已 100% 完成
 
 查看详细更新: [PROGRESS.md](./PROGRESS.md)
 
@@ -174,10 +201,17 @@ bundle exec jekyll serve
 
 ## 🔗 相关链接
 
+### 客户端官方资源
+- **Prysm**: [docs.prylabs.network](https://docs.prylabs.network/)
+- **Teku**: [docs.teku.consensys.io](https://docs.teku.consensys.io/)
+
+### 协议与规范
+- **Consensus Specs**: [github.com/ethereum/consensus-specs](https://github.com/ethereum/consensus-specs)
+- **libp2p**: [docs.libp2p.io](https://docs.libp2p.io/)
+
+### 本项目
 - **在线文档**: [https://xueqianLu.github.io/beacon-sync-doc/](https://xueqianLu.github.io/beacon-sync-doc/)
-- **Prysm**: [https://docs.prylabs.network/](https://docs.prylabs.network/)
-- **共识规范**: [https://github.com/ethereum/consensus-specs](https://github.com/ethereum/consensus-specs)
-- **libp2p**: [https://docs.libp2p.io/](https://docs.libp2p.io/)
+- **GitHub 仓库**: [github.com/xueqianLu/beacon-sync-doc](https://github.com/xueqianLu/beacon-sync-doc)
 
 ---
 
@@ -190,8 +224,8 @@ bundle exec jekyll serve
 ## 📧 联系方式
 
 - **Issues**: [GitHub Issues](https://github.com/xueqianLu/beacon-sync-doc/issues)
-- **Email**: your-email@example.com
+- **Email**: xueqian1991@gmail.com
 
 ---
 
-**最后更新**: 2026-01-04 | **版本**: v1.1 | **状态**: 🟢 持续更新中
+**最后更新**: 2026-01-13 | **版本**: v2.0 | **状态**: 🟢 持续更新中
