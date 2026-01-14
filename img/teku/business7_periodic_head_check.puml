@@ -1,0 +1,52 @@
+@startuml business7_periodic_head_check
+title B7 Periodic Head Check (Teku - 每12秒检查)
+
+start
+
+:scheduler.scheduleAtFixedRate(checkHead, 12s);
+
+repeat
+  :wait 12 seconds...;
+  
+  partition "计算 Lag" {
+    :localHead = chainData.getHeadSlot()|
+    :currentSlot = chainData.getCurrentSlot()|
+    :lag = currentSlot - localHead|
+    
+    :metricsSystem.setHeadLag(lag)|
+  }
+  
+  partition "检查是否落后" {
+    if (lag > SLOTS_PER_EPOCH?) then (是)
+      #Orange:节点落后;
+      
+      :LOG.warn("Node falling behind")|
+      
+      :triggerCatchUp(localHead, currentSlot)|
+      note right: 启动批量同步
+    endif
+  }
+  
+  partition "检查缺失父块" {
+    if (hasMissingParents()?) then (是)
+      :LOG.debug("Found missing parents");
+      
+      :fetchMissingParents()|
+      note right: 请求缺失的父块
+    endif
+  }
+  
+  partition "更新状态机" {
+    :syncStateMachine.updateState()|
+    
+    :newState = calculateState(lag)|
+    
+    if (状态变更?) then (是)
+      :eventBus.post(SyncStateChangedEvent);
+    endif
+  }
+  
+repeat while (服务运行中?) is (是)
+
+stop
+@enduml

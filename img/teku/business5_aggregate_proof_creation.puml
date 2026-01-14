@@ -1,0 +1,79 @@
+@startuml business5_aggregate_proof_creation
+title B5 AggregateAndProof Creation (Teku)
+
+start
+
+:输入:
+- aggregate (Attestation)
+- aggregatorIndex (validator index)
+- selectionProof (slot signature);
+
+partition "创建 AggregateAndProof" {
+  :aggregateAndProof = new AggregateAndProof(
+    UInt64.valueOf(aggregatorIndex),
+    aggregate,
+    selectionProof)|
+  
+  note right
+    AggregateAndProof 结构:
+    - aggregator_index: 聚合者的 validator 索引
+    - aggregate: 聚合后的 Attestation
+    - selection_proof: 证明是 aggregator 的签名
+  end note
+}
+
+partition "计算签名域" {
+  :slot = aggregate.getData().getSlot()|
+  
+  :epoch = spec.computeEpochAtSlot(slot)|
+  
+  :domain = getDomain(
+    state,
+    DOMAIN_AGGREGATE_AND_PROOF,
+    epoch)|
+  note right
+    DOMAIN_AGGREGATE_AND_PROOF = 0x06000000
+    混合 fork version 和 genesis validators root
+  end note
+}
+
+partition "计算 Signing Root" {
+  :objectRoot = aggregateAndProof.hashTreeRoot()|
+  note right: SSZ hash tree root
+  
+  :signingRoot = computeSigningRoot(objectRoot, domain)|
+  note right
+    SigningData:
+    - object_root
+    - domain
+  end note
+}
+
+partition "签名" {
+  :signature = BLSSignatureService.sign(
+    validatorKey,
+    signingRoot)|
+  
+  note right
+    使用 validator 的私钥签名
+    BLS12-381 签名
+  end note
+}
+
+partition "创建最终对象" {
+  :signedAggregateAndProof = new SignedAggregateAndProof(
+    aggregateAndProof,
+    signature)|
+  
+  :LOG.debug("Created SignedAggregateAndProof")|
+  note right
+    kv("aggregatorIndex", aggregatorIndex)
+    kv("slot", slot)
+    kv("numVotes", aggregate.getAggregationBits().getBitCount())
+  end note
+}
+
+:返回 SignedAggregateAndProof;
+
+stop
+@enduml

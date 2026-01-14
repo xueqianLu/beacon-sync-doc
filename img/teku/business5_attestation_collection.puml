@@ -1,0 +1,81 @@
+@startuml business5_attestation_collection
+title B5 Attestation Collection (Teku - AttestationPool 查询)
+
+start
+
+:Aggregator 开始收集 attestations;
+:目标: slot, attestationDataRoot;
+
+partition "AttestationPool 查询" {
+  :attestationPool.getAttestationsForAggregation(
+    slot, attestationDataRoot)|
+  
+  :查询索引: attestationsBySlot[slot][dataRoot]|
+  note right
+    两级索引:
+    1. 按 slot 分组
+    2. 按 attestationDataRoot 分组
+  end note
+}
+
+partition "获取 MatchingDataAttestationGroup" {
+  if (slot 存在?) then (否)
+    :返回空列表;
+    stop
+  endif
+  
+  if (attestationDataRoot 存在?) then (否)
+    :返回空列表;
+    stop
+  endif
+  
+  :group = MatchingDataAttestationGroup;
+  :包含所有相同 AttestationData 的 attestations;
+}
+
+partition "过滤与验证" {
+  :获取 group.getAttestations()|
+  
+  repeat
+    :取一个 attestation;
+    
+    :检查 AttestationData 匹配;
+    
+    if (Data 匹配?) then (否)
+      :跳过该 attestation;
+    endif
+    
+    :检查是否已在聚合结果中;
+    
+    if (已包含?) then (是)
+      :去重，跳过;
+    endif
+    
+    :添加到结果列表;
+    
+  repeat while (还有更多 attestations?) is (是)
+}
+
+partition "统计信息" {
+  :numAttestations = 结果列表大小;
+  
+  :totalVotes = 统计所有 aggregationBits;
+  
+  :LOG.debug("Collected attestations for aggregation")|
+  note right
+    kv("slot", slot)
+    kv("numAttestations", numAttestations)
+    kv("totalVotes", totalVotes)
+  end note
+}
+
+if (结果列表为空?) then (是)
+  :LOG.warn("No attestations found for aggregation");
+  :返回空;
+  stop
+else (否)
+  :返回 attestations 列表;
+endif
+
+stop
+@enduml

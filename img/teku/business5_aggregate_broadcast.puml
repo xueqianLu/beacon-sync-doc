@@ -1,0 +1,80 @@
+@startuml business5_aggregate_broadcast
+title B5 Aggregate Broadcast (Teku - Gossipsub 发布)
+
+start
+
+:收到 SignedAggregateAndProof;
+
+partition "主题选择" {
+  :topicName = "beacon_aggregate_and_proof"|
+  
+  :topic = GossipTopics.getTopic(
+    forkDigest,
+    topicName,
+    gossipEncoding)|
+  
+  :结果: /eth2/{fork_digest}/beacon_aggregate_and_proof/ssz_snappy|
+  note right
+    注意: 聚合不需要 subnet 路由
+    所有聚合都发布到同一个主题
+  end note
+}
+
+partition "编码" {
+  :GossipEncoding.encode(signedAggregateAndProof)|
+  
+  :step 1: SSZ 序列化|
+  note right
+    按 SSZ 规范序列化:
+    - aggregator_index (uint64)
+    - aggregate (Attestation)
+    - selection_proof (BLSSignature)
+    - signature (BLSSignature)
+  end note
+  
+  :step 2: Snappy 压缩|
+  note right: 通常能压缩 20-30%
+  
+  :encodedData = 压缩后的字节;
+}
+
+partition "Gossipsub 发布" {
+  :GossipNetwork.gossip(topic, encodedData)|
+  
+  :异步发送到所有订阅该主题的 peers;
+  
+  fork
+    :Peer 1 接收;
+  fork again
+    :Peer 2 接收;
+  fork again
+    :Peer N 接收;
+  end fork
+}
+
+partition "日志与监控" {
+  if (发送成功?) then (是)
+    :LOG.debug("Published aggregate")|
+    note right
+      kv("slot", slot)
+      kv("aggregatorIndex", aggregatorIndex)
+      kv("numVotes", numVotes)
+    end note
+    
+    :metricsSystem.getCounter(
+      "teku_aggregates_published_total"
+    ).inc()|
+    
+    :metricsSystem.recordGossipPublishLatency()|
+    
+  else (否)
+    :LOG.error("Failed to publish aggregate", error)|
+    
+    :metricsSystem.getCounter(
+      "teku_aggregates_publish_failed_total"
+    ).inc()|
+  endif
+}
+
+stop
+@enduml

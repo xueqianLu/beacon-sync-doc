@@ -1,0 +1,113 @@
+@startuml business6_batch_sync
+title B6 Batch Sync (Teku - 并发批量同步)
+
+start
+
+:BatchSync.syncRange(fromSlot, toSlot);
+
+:BATCH_SIZE = 50;
+:MAX_CONCURRENT_BATCHES = 5;
+
+partition "分割批次" {
+  :计算总 slot 数: totalSlots = toSlot - fromSlot|
+  
+  :计算批次数: numBatches = ceil(totalSlots / BATCH_SIZE)|
+  
+  :LOG.info("Starting batch sync")|
+  note right
+    kv("from", fromSlot)
+    kv("to", toSlot)
+    kv("numBatches", numBatches)
+  end note
+  
+  :创建批次列表;
+}
+
+partition "并发同步" {
+  :concurrencyControl = new Semaphore(MAX_CONCURRENT_BATCHES)|
+  note right: 限制同时进行的批次数
+  
+  fork
+    :Batch 1: slots [0-50);
+    
+    partition "单批次处理" {
+      :acquire semaphore|
+      :请求 blocks (BeaconBlocksByRange)|
+      :验证 blocks;
+      :导入 blocks;
+      :release semaphore|
+    }
+    
+  fork again
+    :Batch 2: slots [50-100);
+    :同样处理...;
+    
+  fork again
+    :Batch 3: slots [100-150);
+    :同样处理...;
+    
+  fork again
+    :...更多批次并发...;
+  end fork
+}
+
+partition "单批次详细流程" {
+  note right
+    每个批次的处理:
+    1. 获取信号量许可
+    2. 选择 sync peer
+    3. 发送 BeaconBlocksByRange 请求
+    4. 接收 blocks
+    5. 验证每个 block
+    6. 导入到链
+    7. 更新进度
+    8. 释放信号量
+    9. 处理错误（重试/降级）
+  end note
+}
+
+partition "进度跟踪" {
+  :每完成一个批次:|
+  
+  :syncProgress.update(batchEndSlot)|
+  
+  :计算同步速度: blocksPerSecond|
+  
+  :估算剩余时间: eta|
+  
+  :LOG.info("Sync progress")|
+  note right
+    kv("current", currentSlot)
+    kv("target", toSlot)
+    kv("progress%", percentage)
+    kv("speed", blocksPerSecond)
+    kv("eta", eta)
+  end note
+  
+  :更新 Metrics;
+}
+
+partition "错误处理" {
+  if (批次失败?) then (是)
+    :LOG.error("Batch sync failed");
+    
+    :重试次数 < 3?|
+    if (是) then
+      :指数退避重试;
+      :backoff = 2^retryCount * 1s;
+    else
+      :标记该批次为失败;
+      :尝试其他 peer;
+    endif
+  endif
+}
+
+if (所有批次完成?) then (是)
+  :LOG.info("Batch sync completed");
+  :返回 SUCCESS;
+else (否)
+  :返回 PARTIAL_SUCCESS;
+endif
+
+stop
+@enduml

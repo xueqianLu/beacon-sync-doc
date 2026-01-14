@@ -1,0 +1,56 @@
+@startuml business6_startup_detection
+title B6 Startup Detection (Teku - 检测已有链数据)
+
+start
+
+:Teku 节点启动;
+
+:BeaconChainController.start();
+
+partition "检查数据库" {
+  :recentChainData.isPreGenesis()|
+  note right: 检查是否在创世之前
+  
+  :recentChainData.isPreForkChoice()|
+  note right: 检查是否有 fork choice 数据
+  
+  :recentChainData.getHeadSlot()|
+  note right: 获取当前 head slot
+}
+
+if (有已存储的链数据?) then (否)
+  #LightYellow:首次启动，无链数据;
+  
+  :LOG.info("No existing chain data");
+  
+  :决定: 需要 Initial Sync;
+  
+else (是)
+  #LightGreen:找到已有链数据;
+  
+  :headSlot = recentChainData.getHeadSlot()|
+  :currentSlot = spec.getCurrentSlot()|
+  
+  :LOG.info("Found existing chain data")|
+  note right
+    kv("headSlot", headSlot)
+    kv("currentSlot", currentSlot)
+  end note
+  
+  partition "计算落后程度" {
+    :lag = currentSlot - headSlot|
+    
+    if (lag > SLOTS_PER_EPOCH?) then (是)
+      #Orange:节点落后较多;
+      :决定: 需要 Catch-Up Sync;
+    else (否)
+      #LightBlue:节点基本同步;
+      :决定: 直接进入 Regular Sync;
+    endif
+  }
+endif
+
+:继续同步流程;
+
+stop
+@enduml

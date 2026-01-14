@@ -1,0 +1,100 @@
+@startuml business6_peer_connection
+title B6 Peer Connection (Teku - 等待并选择最佳 Peer)
+
+start
+
+:SyncPeerSelector.selectBestSyncPeer();
+
+partition "等待足够 Peers" {
+  :MIN_PEERS_FOR_SYNC = 3;
+  :PEER_WAIT_TIMEOUT = 30s;
+  
+  repeat
+    :peerCount = p2pNetwork.getPeerCount()|
+    
+    if (peerCount >= MIN_PEERS?) then (是)
+      :LOG.info("Sufficient peers available");
+      :break;
+    else (否)
+      :LOG.info("Waiting for peers")|
+      note right
+        kv("current", peerCount)
+        kv("required", MIN_PEERS_FOR_SYNC)
+      end note
+      
+      :等待 1s;
+    endif
+    
+  repeat while (未超时?) is (是)
+  
+  if (超时且 peers < MIN_PEERS?) then (是)
+    #Red:Peers 不足;
+    
+    :抛出 InsufficientPeersException;
+    stop
+  endif
+}
+
+partition "获取所有 Peers" {
+  :peers = p2pNetwork.getPeers()|
+  
+  :LOG.debug("Evaluating peers for sync")|
+  note right: kv("numPeers", peers.size())
+}
+
+partition "过滤合适的 Peers" {
+  :localHeadSlot = chainData.getHeadSlot()|
+  
+  repeat
+    :peer = 下一个 peer;
+    
+    :检查 peer.getHeadSlot() > localHeadSlot|
+    if (不满足?) then (是)
+      :跳过该 peer;
+    endif
+    
+    :检查 peer.getScore() > MIN_PEER_SCORE|
+    if (不满足?) then (是)
+      :跳过该 peer;
+    endif
+    
+    :检查 !peer.isDisconnecting()|
+    if (不满足?) then (是)
+      :跳过该 peer;
+    endif
+    
+    :添加到候选列表;
+    
+  repeat while (还有更多 peers?) is (是)
+}
+
+partition "选择最佳 Peer" {
+  if (候选列表为空?) then (是)
+    #Red:无合适 Peer;
+    
+    :抛出 NoSuitablePeerException;
+    stop
+  endif
+  
+  :按以下标准排序:|
+  note right
+    1. Head slot (越新越好)
+    2. Finalized epoch (越新越好)
+    3. Peer score (越高越好)
+  end note
+  
+  :bestPeer = 排序后的第一个 peer|
+  
+  :LOG.info("Selected sync peer")|
+  note right
+    kv("peerId", bestPeer.getId())
+    kv("headSlot", bestPeer.getHeadSlot())
+    kv("finalizedEpoch", bestPeer.getFinalizedEpoch())
+    kv("score", bestPeer.getScore())
+  end note
+}
+
+:返回 bestPeer;
+
+stop
+@enduml

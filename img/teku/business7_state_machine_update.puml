@@ -1,0 +1,79 @@
+@startuml business7_state_machine_update
+title B7 State Machine Update (Teku - 4 状态转换)
+
+start
+
+:SyncStateMachine.updateState();
+
+partition "获取当前信息" {
+  :headSlot = chainData.getHeadSlot()|
+  :currentSlot = chainData.getCurrentSlot()|
+  :lag = currentSlot - headSlot|
+  
+  :headRoot = chainData.getHeadRoot()|
+  :isOptimistic = optimisticTracker.isOptimistic(headRoot)|
+}
+
+partition "计算新状态" {
+  if (lag == 0?) then (是)
+    if (isOptimistic?) then (是)
+      :newState = OPTIMISTIC|
+      note right
+        Head 是最新的
+        但 EL 还未验证
+      end note
+    else (否)
+      :newState = IN_SYNC|
+      note right
+        完全同步
+        EL 已验证
+      end note
+    endif
+    
+  elseif (lag < SLOTS_PER_EPOCH?) then (是)
+    :newState = BEHIND|
+    note right
+      轻微落后
+      < 32 slots
+    end note
+    
+  else
+    :newState = SYNCING|
+    note right
+      严重落后
+      >= 32 slots
+    end note
+  endif
+}
+
+if (newState == currentState?) then (是)
+  :无需转换;
+  stop
+endif
+
+#LightBlue:状态转换;
+
+:LOG.info("Sync state transition")|
+note right
+  kv("from", currentState)
+  kv("to", newState)
+  kv("lag", lag)
+end note
+
+partition "通知监听器" {
+  fork
+    :eventBus.post(SyncStateChangedEvent)|
+    note right: 通知应用组件
+  fork again
+    :metricsSystem.setSyncState(newState)|
+    note right: 更新 Prometheus
+  fork again
+    :validatorClient.onSyncStateChanged(newState)|
+    note right: 通知 Validator
+  end fork
+}
+
+:currentState = newState|
+
+stop
+@enduml

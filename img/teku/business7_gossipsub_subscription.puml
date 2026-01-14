@@ -1,0 +1,44 @@
+@startuml business7_gossipsub_subscription
+title B7 Gossipsub Subscription (Teku - 订阅所有主题)
+
+start
+
+:RegularSyncService.start();
+
+:LOG.info("Starting regular sync");
+
+partition "订阅 beacon_block 主题" {
+  :topic = /eth2/{fork_digest}/beacon_block/ssz_snappy|
+  
+  :gossipNetwork.subscribe(topic, beaconBlockTopicHandler)|
+  
+  :LOG.debug("Subscribed to beacon_block");
+}
+
+partition "订阅 beacon_aggregate_and_proof 主题" {
+  :topic = /eth2/{fork_digest}/beacon_aggregate_and_proof/ssz_snappy|
+  
+  :gossipNetwork.subscribe(topic, aggregateTopicHandler)|
+  
+  :LOG.debug("Subscribed to aggregate");
+}
+
+partition "订阅 attestation subnets" {
+  :ATTESTATION_SUBNET_COUNT = 64;
+  
+  repeat
+    :subnet = 当前 subnet 索引 (0-63);
+    
+    :topic = /eth2/{fork_digest}/beacon_attestation_{subnet}/ssz_snappy|
+    
+    :gossipNetwork.subscribe(topic, attestationTopicHandler)|
+    
+  repeat while (subnet < 64?) is (是)
+  
+  :LOG.info("Subscribed to all attestation subnets");
+}
+
+:LOG.info("All gossip subscriptions complete");
+
+stop
+@enduml

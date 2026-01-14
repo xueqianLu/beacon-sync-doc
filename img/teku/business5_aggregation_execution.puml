@@ -1,0 +1,78 @@
+@startuml business5_aggregation_execution
+title B5 Aggregation Execution (Teku - Bits & Signature 聚合)
+
+start
+
+:收到 attestations 列表;
+:所有 attestations 有相同的 AttestationData;
+
+partition "初始化" {
+  if (列表为空?) then (是)
+    :返回 Optional.empty();
+    stop
+  endif
+  
+  :aggregate = attestations[0]|
+  note right: 以第一个 attestation 为基础
+  
+  :currentIndex = 1;
+}
+
+partition "迭代聚合" {
+  repeat
+    :nextAttestation = attestations[currentIndex];
+    
+    :验证 AttestationData 相同|
+    note right
+      if (!aggregate.data.equals(next.data)) {
+        throw IllegalArgumentException
+      }
+    end note
+    
+    partition "聚合 Aggregation Bits" {
+      :bits1 = aggregate.getAggregationBits()|
+      :bits2 = nextAttestation.getAggregationBits()|
+      
+      :mergedBits = bits1.or(bits2)|
+      note right
+        按位 OR 操作
+        例如: 1010 OR 0101 = 1111
+      end note
+    }
+    
+    partition "聚合 BLS 签名" {
+      :sig1 = aggregate.getSignature()|
+      :sig2 = nextAttestation.getSignature()|
+      
+      :mergedSignature = BLS.aggregate([sig1, sig2])|
+      note right
+        BLS 签名的数学聚合
+        G1 点的加法
+      end note
+    }
+    
+    :aggregate = new Attestation(
+      mergedBits,
+      aggregate.getData(),
+      mergedSignature)|
+    
+    :currentIndex++;
+    
+  repeat while (currentIndex < attestations.size()) is (是)
+}
+
+partition "最终统计" {
+  :finalVotes = aggregate.getAggregationBits().getBitCount()|
+  
+  :LOG.debug("Aggregation complete")|
+  note right
+    kv("numAttestations", attestations.size())
+    kv("numVotes", finalVotes)
+    kv("dataRoot", aggregate.getData().hashTreeRoot())
+  end note
+}
+
+:返回聚合后的 Attestation;
+
+stop
+@enduml

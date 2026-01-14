@@ -1,0 +1,76 @@
+@startuml business7_missing_parent_handling
+title B7 Missing Parent Handling (Teku - 请求缺失父块)
+
+start
+
+:发现区块缺失父块;
+:blockRoot, parentRoot;
+
+:LOG.debug("Block has missing parent")|
+
+partition "添加到待处理缓存" {
+  :pendingBlocks.put(blockRoot, block)|
+  note right: ConcurrentHashMap 存储
+}
+
+partition "请求父块" {
+  :peerSelector.selectBestPeer()|
+  
+  :peer.requestBlocksByRoot([parentRoot])|
+  note right
+    发送 BeaconBlocksByRoot 请求
+    超时: 5s
+  end note
+  
+  if (请求成功?) then (否)
+    #Red:请求失败;
+    
+    :重试计数++;
+    
+    if (重试 < 3?) then (是)
+      :等待 2^retryCount 秒;
+      :重新请求;
+    else (否)
+      :LOG.error("Failed to fetch parent");
+      :放弃该块;
+      stop
+    endif
+  endif
+  
+  :parentBlock = 响应中的区块;
+}
+
+partition "导入父块" {
+  :blockImporter.importBlock(parentBlock)|
+  
+  if (导入成功?) then (否)
+    :LOG.error("Failed to import parent");
+    stop
+  endif
+  
+  :LOG.debug("Parent block imported");
+}
+
+partition "重新处理子块" {
+  :找到所有 parentRoot 匹配的子块|
+  
+  :childBlocks = pendingBlocks
+    .filter(b -> b.parentRoot == parentRoot)
+    .sorted(by slot)|
+  
+  repeat
+    :childBlock = 下一个子块;
+    
+    :blockImporter.importBlock(childBlock)|
+    
+    :pendingBlocks.remove(childBlock.root)|
+    
+    :LOG.debug("Imported child block");
+    
+  repeat while (还有子块?) is (是)
+}
+
+:LOG.info("Missing parent chain resolved");
+
+stop
+@enduml

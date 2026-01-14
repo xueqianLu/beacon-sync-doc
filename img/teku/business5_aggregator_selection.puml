@@ -1,0 +1,65 @@
+@startuml business5_aggregator_selection
+title B5 Aggregator Selection (Teku - Modulo 选举)
+
+start
+
+:Validator 收到 Attestation Duty;
+:duty.slot, duty.committeeIndex;
+
+partition "计算 Slot Signature" {
+  :slotRoot = hash_tree_root(slot)|
+  
+  :domain = getDomain(state, DOMAIN_SELECTION_PROOF, slot)|
+  
+  :signingRoot = computeSigningRoot(slotRoot, domain)|
+  
+  :slotSignature = BLS.sign(validatorKey, signingRoot)|
+  note right: 使用 validator 私钥签名
+}
+
+partition "Modulo 计算" {
+  :committeeSize = spec.getBeaconCommitteeSize(state, slot)|
+  note right
+    从 state 获取 committee 大小
+    通常在 128-2048 之间
+  end note
+  
+  :modulo = max(1, committeeSize / TARGET_AGGREGATORS)|
+  note right
+    TARGET_AGGREGATORS_PER_COMMITTEE = 16
+    确保每个 committee 约有 16 个 aggregators
+  end note
+}
+
+partition "哈希选举" {
+  :hash = SHA256(slotSignature.toSSZBytes())|
+  
+  :hashValue = UInt64.fromBytes(hash[0:8])|
+  note right: 取前 8 字节作为 UInt64
+  
+  :is_aggregator = (hashValue % modulo) == 0|
+}
+
+if (is_aggregator?) then (是)
+  #LightGreen:标记为 Aggregator;
+  
+  :保存 slotSignature 作为 selection_proof;
+  
+  :LOG.info("Selected as aggregator")|
+  note right
+    kv("slot", slot)
+    kv("committeeIndex", committeeIndex)
+    kv("modulo", modulo)
+  end note
+  
+  :继续聚合流程;
+else (否)
+  :不执行聚合;
+  
+  :LOG.debug("Not selected as aggregator");
+  
+  stop
+endif
+
+stop
+@enduml

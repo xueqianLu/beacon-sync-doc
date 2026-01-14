@@ -1,0 +1,95 @@
+@startuml business6_mode_transition
+title B6 Mode Transition (Teku - Initial -> Regular Sync)
+
+start
+
+:SyncStateMachine.checkAndTransition();
+
+partition "计算当前状态" {
+  :headSlot = chainData.getHeadSlot()|
+  :currentSlot = chainData.getCurrentSlot()|
+  :lag = currentSlot - headSlot|
+  
+  if (lag == 0?) then (是)
+    :newState = IN_SYNC;
+  elseif (lag < SLOTS_PER_EPOCH?) then (是)
+    :newState = REGULAR_SYNC;
+  elseif (lag < 64?) then (是)
+    :newState = CATCH_UP;
+  else
+    :newState = SYNCING;
+  endif
+}
+
+if (newState == currentState?) then (是)
+  :无需切换;
+  stop
+endif
+
+#LightBlue:开始状态切换;
+
+:LOG.info("Sync state transition")|
+note right
+  kv("from", currentState)
+  kv("to", newState)
+end note
+
+partition "停止当前服务" {
+  if (currentState == SYNCING?) then (是)
+    :initialSyncService.stop()|
+    note right: 发送停止信号
+    
+    :等待当前批次完成|
+    :initialSyncService.waitForCompletion()|
+    note right
+      最多等待 30s
+      确保资源清理
+    end note
+  endif
+}
+
+partition "启动新服务" {
+  if (newState == REGULAR_SYNC?) then (是)
+    :regularSyncService.start()|
+    
+    :订阅 Gossipsub 主题|
+    note right
+      - beacon_block
+      - beacon_aggregate_and_proof
+      - beacon_attestation_{subnet}
+    end note
+    
+    :启动定期 Head 检查|
+    note right: 每 12s 检查一次
+    
+    :启动缺失父块处理;
+  endif
+}
+
+partition "更新状态" {
+  :currentSyncState = newState|
+  
+  :eventBus.post(new SyncStateChangedEvent(newState))|
+  note right: 通知所有监听器
+  
+  :metricsSystem.setSyncState(newState)|
+  note right: 更新 Prometheus metrics
+}
+
+partition "通知依赖服务" {
+  fork
+    :通知 Validator 客户端|
+    note right: Validator 可以开始职责
+  fork again
+    :通知 Block Proposer|
+    note right: 可以提议区块
+  fork again
+    :通知 Attestation Producer|
+    note right: 可以生成 attestations
+  end fork
+}
+
+:LOG.info("Sync state transition completed");
+
+stop
+@enduml

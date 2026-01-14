@@ -1,0 +1,72 @@
+@startuml business7_real_time_block_receive
+title B7 Real-time Block Receive (Teku - Gossipsub 实时接收)
+
+start
+
+:GossipNetwork 收到 beacon_block 消息;
+
+:BeaconBlockTopicHandler.handleMessage();
+
+partition "快速去重" {
+  :blockRoot = block.getRoot()|
+  
+  if (seenTracker.isSeen(blockRoot)?) then (是)
+    :LOG.debug("Block already seen");
+    :返回 IGNORE;
+    stop
+  endif
+  
+  :seenTracker.markSeen(blockRoot)|
+}
+
+partition "验证" {
+  :validator.validate(block)|
+  note right
+    - 预验证
+    - 签名验证
+    - 父块检查
+  end note
+  
+  if (验证通过?) then (否)
+    :返回 REJECT/IGNORE;
+    stop
+  endif
+}
+
+partition "导入" {
+  :blockImporter.importBlock(block)|
+  
+  fork
+    :验证状态转换;
+  fork again
+    :写入数据库;
+  fork again
+    :更新 ForkChoice;
+  end fork
+  
+  if (导入成功?) then (否)
+    :LOG.error("Block import failed");
+    stop
+  endif
+}
+
+partition "更新 Head" {
+  :forkChoice.processHead()|
+  
+  if (Head 变更?) then (是)
+    :eventBus.post(HeadChangedEvent);
+    :LOG.info("Head updated");
+  endif
+}
+
+partition "记录指标" {
+  :metricsSystem.recordBlockImport()|
+  note right
+    - block_import_duration
+    - blocks_imported_total
+    - head_slot_gauge
+  end note
+}
+
+stop
+@enduml
