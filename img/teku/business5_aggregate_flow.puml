@@ -1,0 +1,68 @@
+@startuml business5_aggregate_flow
+title Business 5: Aggregate & Proof 聚合投票 (Teku)
+
+start
+
+:Validator 收到 Aggregate Duty;
+
+partition "Aggregator 选举" {
+  :计算 selection_proof = BLS.sign(slot_signature)|
+  note right
+    slot_signature = hash_tree_root(slot)
+    使用 validator 私钥签名
+  end note
+  
+  :is_aggregator = hash(selection_proof) % modulo == 0|
+  note right
+    modulo = max(1, 
+      active_validators_in_committee / TARGET_AGGREGATORS)
+  end note
+  
+  if (is_aggregator?) then (否)
+    :不执行聚合;
+    stop
+  endif
+}
+
+partition "收集 Attestations" {
+  :AttestationAggregator.createAggregate(
+    slot, attestationDataRoot)|
+  
+  :从 AttestationPool 获取相同 AttestationData;
+  
+  if (找到匹配?) then (否)
+    :返回 empty;
+    stop
+  endif
+}
+
+partition "聚合" {
+  :aggregate = first attestation;
+  
+  repeat
+    :取下一个 attestation;
+    :mergedBits = aggregate.bits OR attestation.bits;
+    :mergedSig = BLS.aggregate(sigs);
+    :aggregate = new Attestation(mergedBits, data, mergedSig);
+  repeat while (还有更多?) is (是)
+}
+
+partition "创建 AggregateAndProof" {
+  :aggregateAndProof = new AggregateAndProof(
+    aggregator_index,
+    aggregate,
+    selection_proof)|
+  
+  :signature = BLS.sign(aggregateAndProof)|
+  
+  :signedAggregateAndProof = new SignedAggregateAndProof(
+    aggregateAndProof, signature);
+}
+
+partition "广播" {
+  :topic = beacon_aggregate_and_proof;
+  :GossipNetwork.gossip(topic, encode(signedAggregateAndProof));
+}
+
+stop
+@enduml

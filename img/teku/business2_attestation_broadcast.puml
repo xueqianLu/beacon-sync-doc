@@ -1,0 +1,47 @@
+@startuml business2_attestation_broadcast
+title B2 Attestation Broadcast (Teku - Subnet 路由)
+
+start
+
+:收到 Attestation;
+
+:AttestationGossipManager.publishAttestation();
+
+partition "Subnet 计算" {
+  :spec.computeSubnetForAttestation(attestation)|
+  note right
+    subnet = (attestation.data.slot + attestation.data.index) 
+            % ATTESTATION_SUBNET_COUNT
+    ATTESTATION_SUBNET_COUNT = 64
+  end note
+  
+  :subnet = 计算结果 (0-63);
+}
+
+partition "主题选择" {
+  :topic = GossipTopics.getAttestationSubnetTopic(forkDigest, subnet)|
+  note right
+    /eth2/{fork_digest}/beacon_attestation_{subnet}/ssz_snappy
+    例如: /eth2/4a26c58b/beacon_attestation_5/ssz_snappy
+  end note
+}
+
+partition "编码与发布" {
+  :GossipEncoding.encode(attestation)|
+  note right
+    1. SSZ 序列化
+    2. Snappy 压缩
+  end note
+  
+  :GossipNetwork.gossip(topic, encodedData)|
+  
+  :异步发送到订阅该 subnet 的所有 peers;
+}
+
+partition "记录" {
+  :LOG.debug("Published attestation")|
+  :Metrics.incrementAttestationsSent(subnet);
+}
+
+stop
+@enduml

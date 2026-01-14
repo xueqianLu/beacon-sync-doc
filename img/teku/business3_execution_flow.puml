@@ -1,0 +1,71 @@
+@startuml business3_execution_flow
+title Business 3: 执行层交易 -> Payload 构建 -> Payload 执行 (Teku)
+
+partition 交易提交 {
+  :用户提交交易到执行客户端 (Geth/Besu);
+  :交易进入 Mempool;
+  note right: Teku 不直接参与此阶段
+}
+
+partition Payload 构建 {
+  :CL Proposer 准备提议区块;
+  :ExecutionEngineClient.forkChoiceUpdated()|
+  note right
+    Engine API: engine_forkchoiceUpdatedV2
+    - 更新 Head/Safe/Finalized
+    - 提供 PayloadAttributes
+  end note
+  
+  :EL 返回 payloadId;
+  
+  if (使用 Builder?) then (是)
+    :BuilderClient.getPayload()|
+    note right: MEV-Boost Builder
+    
+    if (Builder 成功?) then (否)
+      :降级到本地 EL;
+      :ExecutionEngineClient.getPayload(payloadId)|
+    endif
+  else (否)
+    :ExecutionEngineClient.getPayload(payloadId)|
+  endif
+  
+  :返回 ExecutionPayload;
+}
+
+partition 打包到区块 {
+  :将 ExecutionPayload 放入 BeaconBlock;
+  :广播 SignedBeaconBlock;
+}
+
+partition Payload 执行 {
+  :其他节点收到区块;
+  
+  if (Optimistic Sync?) then (是)
+    #LightGreen:立即导入（不等待 EL 验证）;
+    :标记为 optimistic;
+    :异步触发 EL 验证;
+  else (否)
+    :同步 EL 验证;
+  endif
+  
+  :ExecutionEngineClient.newPayload()|
+  note right
+    Engine API: engine_newPayloadV2
+    EL 执行交易并返回状态
+  end note
+  
+  if (Payload 状态?) then (VALID)
+    :标记区块为已验证;
+    :更新 Fork Choice;
+  else (INVALID)
+    :拒绝区块;
+    :惩罚提供者 peer;
+    :触发 Reorg;
+  else (SYNCING)
+    :保持 optimistic 状态;
+    :等待 EL 同步完成;
+  endif
+}
+
+@enduml

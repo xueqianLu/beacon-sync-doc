@@ -1,0 +1,71 @@
+@startuml business2_attestation_processing
+title B2 Attestation Processing (Teku - Fork Choice 更新)
+
+start
+
+:Attestation 已验证并添加到 AttestationPool;
+
+:AttestationManager.onAttestationAdded(attestation);
+
+partition "更新 Fork Choice" {
+  :获取 attestation 投票的区块 root|
+  note right: attestation.data.beacon_block_root
+  
+  :计算权重 = aggregationBits.getBitCount()|
+  note right: 统计投票的 validator 数量
+  
+  :ForkChoice.onAttestation(blockRoot, weight)|
+  note right
+    更新 blockRoot 的累积权重
+    影响 Head 选择
+  end note
+}
+
+partition "检查 Head 更新" {
+  :computeHead()|
+  note right: 运行 LMD-GHOST 算法
+  
+  :newHead = 选出的最佳链头;
+  
+  if (newHead != currentHead?) then (是)
+    #LightBlue:触发 Head 变更;
+    
+    :updateHead(newHead);
+    :EventBus.post(HeadChangedEvent);
+    
+    :通知所有监听器|
+    note right
+      - Block proposer
+      - Attestation producer
+      - Validator client
+    end note
+  endif
+}
+
+partition "等待打包" {
+  :Attestation 保留在 AttestationPool;
+  
+  :等待下一个区块提议者;
+  
+  :BlockProposer 从池中选择 attestations|
+  note right
+    优先选择:
+    1. 最新的 attestations
+    2. 聚合度高的 attestations
+    3. 最大化区块奖励
+  end note
+  
+  :打包到 BeaconBlock.body.attestations;
+}
+
+partition "清理" {
+  :定期清理过期 attestations|
+  note right
+    清理规则:
+    - slot < currentSlot - 32
+    - 已被打包到链上
+  end note
+}
+
+stop
+@enduml

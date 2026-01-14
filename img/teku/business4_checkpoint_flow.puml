@@ -1,0 +1,78 @@
+@startuml business4_checkpoint_flow
+title Business 4: Checkpoint Sync + Backfill (Teku)
+
+start
+
+:节点启动，检测到 Checkpoint 配置;
+note right
+  --initial-state=<URL|FILE>
+  或 --initial-state-url
+end note
+
+partition "检查点加载" {
+  if (配置类型?) then (URL)
+    :CheckpointStateDownloader.downloadFromUrl()|
+    :HTTP GET 请求;
+    :下载 SSZ 格式的 BeaconState;
+  else (FILE)
+    :StateLoader.loadFromFile()|
+    :读取本地 SSZ 文件;
+  endif
+  
+  :解码 BeaconState;
+}
+
+partition "状态验证" {
+  :WeakSubjectivityValidator.validate()|
+  
+  :验证 state root 匹配;
+  
+  :验证在 WSP 内|
+  note right
+    checkpointEpoch + wsPeriod >= currentEpoch
+  end note
+  
+  :验证 finalized checkpoint;
+  
+  if (验证通过?) then (否)
+    :抛出异常，停止启动;
+    stop
+  endif
+}
+
+partition "链初始化" {
+  :RecentChainData.initializeFromCheckpoint(state, block);
+  
+  :ForkChoice.initializeFromCheckpoint()|
+  note right: 初始化 fork choice 算法
+  
+  :设置 finalized checkpoint;
+  :设置 justified checkpoint;
+  :设置 Head;
+  
+  :LOG.info("Checkpoint sync completed");
+}
+
+partition "开始同步" {
+  :切换到 Regular Sync 模式;
+  :订阅 Gossipsub 主题;
+  :开始实时跟踪;
+}
+
+partition "可选 Backfill" {
+  if (启用 Backfill?) then (是)
+    :BackfillService.start()|
+    
+    :从 checkpointSlot 向后回填;
+    
+    repeat
+      :请求历史区块批次 (50 blocks);
+      :存储到数据库;
+    repeat while (回填到创世块?) is (否)
+    
+    :LOG.info("Backfill completed");
+  endif
+}
+
+stop
+@enduml

@@ -1,0 +1,60 @@
+@startuml business2_attestation_aggregation
+title B2 Attestation Aggregation (Teku - Aggregator 职责)
+
+start
+
+:Validator 被选为 Aggregator;
+note right
+  通过 modulo 选举:
+  is_aggregator = hash(signature) % modulo == 0
+  modulo = max(1, active_validators / TARGET_AGGREGATORS_PER_COMMITTEE)
+end note
+
+:收到 Aggregate Duty;
+
+:AttestationAggregator.createAggregate(slot, attestationDataRoot);
+
+partition "从池中收集" {
+  :attestationPool.getAttestations(slot, attestationDataRoot)|
+  
+  :获取所有相同 AttestationData 的 attestations;
+  
+  if (找到匹配的 attestations?) then (否)
+    :返回 Optional.empty();
+    stop
+  endif
+}
+
+partition "聚合" {
+  :初始化 aggregate = first attestation;
+  
+  repeat
+    :取下一个 attestation;
+    
+    :mergedBits = aggregate.bits.or(attestation.bits)|
+    note right: 按位 OR 操作
+    
+    :mergedSig = BLS.aggregate([aggregate.sig, attestation.sig])|
+    note right: BLS 签名聚合
+    
+    :aggregate = new Attestation(mergedBits, data, mergedSig);
+    
+  repeat while (还有更多 attestations?) is (是)
+}
+
+:创建 AggregateAndProof;
+note right
+  AggregateAndProof:
+  - aggregator_index
+  - aggregate (聚合后的 Attestation)
+  - selection_proof (证明是 aggregator)
+end note
+
+:BLS 签名 AggregateAndProof;
+
+:SignedAggregateAndProof = sign(aggregateAndProof);
+
+:发布到 beacon_aggregate_and_proof 主题;
+
+stop
+@enduml

@@ -1,0 +1,72 @@
+@startuml business2_attestation_flow
+title Business 2: Attestation 生成 -> 广播 -> 接收 -> 聚合 -> 处理 (Teku)
+
+partition 生成 {
+  :Validator 收到 Attestation Duty;
+  :AttestationProductionDuty.produceAttestation()|
+  note right
+    - ForkChoice.getHead()
+    - AttestationFactory.createAttestationData()
+    - 创建 aggregation bits
+  end note
+  :BLS 签名;
+  :返回 Attestation;
+}
+
+partition 广播 {
+  :计算 Subnet (spec.computeSubnetForAttestation)|
+  :选择主题: /eth2/{fork_digest}/beacon_attestation_{subnet}/{encoding};
+  :GossipNetwork.gossip()|
+  note right: SSZ + Snappy 编码
+  :发布到对应 Subnet;
+}
+
+partition 接收 {
+  :AttestationTopicHandler 收到消息;
+  :解码 Attestation;
+  
+  if (重复检查) then (是)
+    :返回 IGNORE;
+  else (否)
+    :AttestationValidator.validate()|
+  endif
+}
+
+partition 验证 {
+  :检查 Slot 有效性;
+  :检查 Committee Index;
+  :验证 Attestation Data;
+  :批量签名验证;
+  
+  if (验证通过?) then (是)
+    :AttestationPool.add();
+  else (否)
+    :返回 REJECT;
+  endif
+}
+
+partition 聚合 {
+  if (是 Aggregator?) then (是)
+    :AttestationAggregator.createAggregate()|
+    :从池中获取相同 AttestationData 的 attestations;
+    :聚合 aggregation bits 和签名;
+    :创建 AggregateAndProof;
+    :Gossip 到 beacon_aggregate_and_proof 主题;
+  endif
+}
+
+partition 处理 {
+  :ForkChoice.onAttestation()|
+  note right: 更新区块权重
+  
+  :检查是否触发 Head 更新;
+  
+  if (需要更新 Head?) then (是)
+    :ForkChoice.processHead();
+    :EventBus.post(HeadChangedEvent);
+  endif
+  
+  :等待打包到区块;
+}
+
+@enduml

@@ -1,0 +1,72 @@
+@startuml business2_attestation_receive
+title B2 Attestation Receive (Teku - TopicHandler)
+
+start
+
+:GossipNetwork 收到 Attestation 消息 (特定 subnet);
+
+:AttestationTopicHandler.handleMessage();
+
+partition "解码" {
+  :Snappy 解压缩;
+  :SSZ 反序列化 -> Attestation;
+}
+
+partition "去重检查" {
+  :computeMessageId(attestation)|
+  note right: SHA256(attestation.data + aggregationBits)
+  
+  if (SeenMessageTracker.isSeen?) then (是)
+    :返回 InternalValidationResult.IGNORE;
+    stop
+  else (否)
+    :markSeen();
+  endif
+}
+
+partition "快速预验证" {
+  :检查 Slot 范围|
+  note right
+    currentSlot - SLOTS_PER_EPOCH 
+    <= attestation.data.slot 
+    <= currentSlot
+  end note
+  
+  if (Slot 有效?) then (否)
+    :返回 IGNORE;
+    stop
+  endif
+  
+  :检查 committee index < committees_per_slot;
+  
+  if (Committee 有效?) then (否)
+    :返回 REJECT;
+    stop
+  endif
+}
+
+partition "完整验证" {
+  :AttestationValidator.validate(attestation);
+  
+  :验证 AttestationData 字段;
+  :验证 aggregation bits 长度;
+  :检查 LMD vote (beacon_block_root);
+  :检查 FFG vote (source, target);
+  
+  :批量签名验证 (BatchSignatureVerifier)|
+  note right: 添加到批量队列，64 个一批验证
+  
+  if (验证通过?) then (否)
+    :返回 REJECT + 惩罚 peer;
+    stop
+  endif
+}
+
+:AttestationPool.add(attestation);
+
+:EventBus.post(AttestationReceivedEvent);
+
+:返回 InternalValidationResult.ACCEPT;
+
+stop
+@enduml

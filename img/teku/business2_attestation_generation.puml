@@ -1,0 +1,56 @@
+@startuml business2_attestation_generation
+title B2 Attestation Generation (Teku)
+
+start
+
+:收到 Attestation Duty;
+note right
+  由 ValidatorDuties 调度
+  每个 validator 在指定 slot
+  为指定 committee 投票
+end note
+
+:AttestationProductionDuty.produceAttestation(slot, committeeIndex);
+
+partition "SafeFuture 异步生成" {
+  :SafeFuture.of(() -> {|
+  
+  :ForkChoice.getHead()|
+  note right: 获取当前最佳链头
+  
+  :chainData.getBlockState(headRoot)|
+  note right: 获取 Head 状态
+  
+  :AttestationFactory.createAttestationData()|
+  note right
+    填充:
+    - slot
+    - index (committeeIndex)
+    - beacon_block_root (head)
+    - source (justified checkpoint)
+    - target (current epoch checkpoint)
+  end note
+  
+  :创建 aggregation bits|
+  note right
+    根据 validator 在 committee 中的位置
+    设置对应的 bit
+  end note
+  
+  :BLSSignatureService.sign()|
+  note right
+    签名 AttestationData
+    使用 validator 的私钥
+  end note
+  
+  :构建 Attestation(aggregationBits, data, signature);
+  
+  :})|
+}
+
+:返回 SafeFuture<Optional<Attestation>>;
+
+:Validator 客户端发送到网络;
+
+stop
+@enduml
