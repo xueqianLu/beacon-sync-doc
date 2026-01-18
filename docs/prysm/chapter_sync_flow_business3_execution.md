@@ -8,7 +8,7 @@
 
 ### 主流程
 
-![业务 3：执行层交易主线](img/business3_execution.png)
+![业务 3：执行层交易主线](../../img/prysm/business3_execution.png)
 
 子流程跳转：
 
@@ -18,12 +18,12 @@
 
 ### B3 Execution Submission（交易提交） {#b3-execution-submission}
 
-![B3 Execution Submission](img/business3_submission.png)
+![B3 Execution Submission](../../img/prysm/business3_submission.png)
 
 ### B3 Execution Packing（打包与 MEV） {#b3-execution-packing}
 
-![B3 Execution Packing](img/business3_packing.png)
+![B3 Execution Packing](../../img/prysm/business3_packing.png)
 
 ### B3 Execution Execution（执行） {#b3-execution-execution}
 
-![B3 Execution Execution](img/business3_execution.png)
+![B3 Execution Execution](../../img/prysm/business3_execution.png)

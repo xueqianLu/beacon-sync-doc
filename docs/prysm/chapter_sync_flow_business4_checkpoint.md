@@ -8,7 +8,7 @@
 
 ### 主流程
 
-![业务 4：Checkpoint Sync 主线](img/business4_checkpoint_overall.png)
+![业务 4：Checkpoint Sync 主线](../../img/prysm/business4_checkpoint_overall.png)
 
 子流程跳转：
 
@@ -18,12 +18,12 @@
 
 ### B4 Checkpoint Fetch State（获取 Checkpoint State） {#b4-checkpoint-fetch-state}
 
-![B4 Checkpoint Fetch State](img/business4_checkpoint_fetch_state.png)
+![B4 Checkpoint Fetch State](../../img/prysm/business4_checkpoint_fetch_state.png)
 
 ### B4 Checkpoint Init & Forward Sync（初始化 + 向前同步） {#b4-checkpoint-init-and-forward}
 
-![B4 Checkpoint Init and Forward Sync](img/business4_checkpoint_init_and_forward.png)
+![B4 Checkpoint Init and Forward Sync](../../img/prysm/business4_checkpoint_init_and_forward.png)
 
 ### B4 Checkpoint Backfill（历史回填） {#b4-checkpoint-backfill}
 
-![B4 Checkpoint Backfill](img/business4_checkpoint_backfill.png)
+![B4 Checkpoint Backfill](../../img/prysm/business4_checkpoint_backfill.png)

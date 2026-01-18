@@ -19,16 +19,16 @@
 
 ### B5 Aggregate Duties & Selection（聚合者职责与选举） {#b5-aggregate-duties}
 
-![B5 Aggregate Duties and Selection](img/business5_agg_selection.png)
+![B5 Aggregate Duties and Selection](../../img/prysm/business5_agg_selection.png)
 
 ### B5 Aggregate Build Message（本地聚合与构造消息） {#b5-aggregate-build-message}
 
-![B5 Aggregate Build Message](img/business5_agg_build.png)
+![B5 Aggregate Build Message](../../img/prysm/business5_agg_build.png)
 
 ### B5 Aggregate Broadcast（广播） {#b5-aggregate-broadcast}
 
-![B5 Aggregate Broadcast](img/business5_agg_broadcast.png)
+![B5 Aggregate Broadcast](../../img/prysm/business5_agg_broadcast.png)
 
 ### B5 Aggregate Receive & Validate（接收与验证） {#b5-aggregate-receive-validate}
 
-![B5 Aggregate Receive and Validate](img/business5_agg_receive_validate.png)
+![B5 Aggregate Receive and Validate](../../img/prysm/business5_agg_receive_validate.png)
