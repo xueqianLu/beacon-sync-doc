@@ -1,0 +1,38 @@
+@startuml business3_payload_execution
+title B3 Payload Execution（Teku）- Payload 执行/验证流程
+
+start
+
+:节点收到 SignedBeaconBlock;
+:解析 block body 中的 ExecutionPayload;
+
+if (处于 Optimistic Sync?) then (是)
+  :先导入区块（不阻塞于 EL 验证）;
+  :标记区块为 optimistic;
+  :异步触发 payload 验证;
+else (否)
+  :同步触发 payload 验证;
+endif
+
+:ExecutionEngineClient.newPayload();
+note right
+  Engine API: engine_newPayloadV2
+  EL 执行 payload（交易执行）并返回状态
+end note
+
+if (PayloadStatus == VALID?) then (是)
+  :标记区块为已验证;
+  :ForkChoice 更新/推进 head;
+  stop
+elseif (PayloadStatus == INVALID?) then (是)
+  :拒绝区块;
+  :惩罚/降分提供者 peer;
+  :必要时触发 reorg 或回滚处理;
+  stop
+else (SYNCING/ACCEPTED/UNKNOWN)
+  :保持 optimistic 状态;
+  :等待 EL 完成同步并重试验证;
+  stop
+endif
+
+@enduml

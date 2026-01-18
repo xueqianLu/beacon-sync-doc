@@ -1,0 +1,27 @@
+@startuml business3_transaction_submission
+title B3 Transaction Submission（Teku）- 交易提交流程
+
+start
+
+:用户在钱包/应用发起交易;
+:交易通过 JSON-RPC
+提交到执行客户端 (Geth/Besu/Nethermind);
+:执行客户端进行基础校验
+(签名/nonce/余额等);
+
+if (交易有效?) then (是)
+  :放入 Mempool;
+  :等待被打包;
+else (否)
+  :拒绝交易;
+  stop
+endif
+
+note right
+  Teku/CL 不直接接收交易；
+  后续在提议时通过 Engine API
+  间接“消费”执行层构建的 payload。
+end note
+
+stop
+@enduml

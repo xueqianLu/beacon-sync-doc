@@ -1,0 +1,31 @@
+@startuml business3_optimistic_validation
+title B3 Optimistic Validation（Teku）- 乐观导入后的异步验证
+
+start
+
+:区块先被导入并标记为 optimistic;
+:OptimisticBlockTracker 记录 blockRoot;
+
+fork
+  :继续同步/处理后续区块;
+fork again
+  :调度异步任务进行 EL 验证;
+  :ExecutionEngineClient.newPayload();
+  note right
+    异步执行，避免阻塞区块导入路径
+  end note
+
+  if (PayloadStatus == VALID?) then (是)
+    :标记 optimistic -> validated;
+    :允许该链分支参与 fork choice;
+  elseif (PayloadStatus == INVALID?) then (是)
+    :标记 validated=false;
+    :触发 invalid payload 处理
+    (丢弃/回滚/惩罚 peer);
+  else (SYNCING/UNKNOWN)
+    :延迟后重试验证;
+  endif
+end fork
+
+stop
+@enduml

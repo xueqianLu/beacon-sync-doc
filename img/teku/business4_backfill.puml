@@ -1,0 +1,23 @@
+@startuml business4_backfill
+title B4 Backfill（Teku）- 历史区块回填
+
+start
+
+if (Backfill enabled?) then (否)
+  :跳过回填;
+  stop
+endif
+
+:BackfillService.start();
+:确定回填范围 (fromSlot..toSlot);
+
+repeat
+  :计算 batchStart/batchSize;
+  :通过 Req/Resp 获取历史区块
+(BeaconBlocksByRange);
+  :验证并写入数据库;
+repeat while (currentSlot > fromSlot?) is (是)
+
+:LOG.info("Backfill completed");
+stop
+@enduml

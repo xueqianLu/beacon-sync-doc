@@ -23,6 +23,7 @@ title: 首页
 <td width="50%">
 
 #### 🟦 [Prysm (Go)](./docs/prysm/)
+
 - ✅ **28/45 章完成** (62.2%)
 - 基础概念、P2P 网络
 - Req/Resp、Gossipsub
@@ -35,6 +36,7 @@ title: 首页
 <td width="50%">
 
 #### 🟧 [Teku (Java)](./docs/teku/)
+
 - 🚧 **准备中**
 - 框架已搭建
 - 代码研究进行中
@@ -57,6 +59,30 @@ title: 首页
 - **Lighthouse** - Rust 实现（计划中）
 - **Nimbus** - Nim 实现（计划中）
 
+### 🗺️ 同步流程图章节索引
+
+#### Prysm
+
+- [流程图总览](./docs/prysm/chapter_sync_flow_diagrams.md)
+- [业务 1：区块处理](./docs/prysm/chapter_sync_flow_business1_block.md)
+- [业务 2：Attestation](./docs/prysm/chapter_sync_flow_business2_attestation.md)
+- [业务 3：执行层](./docs/prysm/chapter_sync_flow_business3_execution.md)
+- [业务 4：Checkpoint Sync](./docs/prysm/chapter_sync_flow_business4_checkpoint.md)
+- [业务 5：Aggregate](./docs/prysm/chapter_sync_flow_business5_aggregate.md)
+- [业务 6：Initial Sync](./docs/prysm/chapter_sync_flow_business6_initial.md)
+- [业务 7：Regular Sync](./docs/prysm/chapter_sync_flow_business7_regular.md)
+
+#### Teku
+
+- [流程图总览](./docs/teku/chapter_sync_flow_diagrams.md)
+- [业务 1：区块处理](./docs/teku/chapter_sync_flow_business1_block.md)
+- [业务 2：Attestation](./docs/teku/chapter_sync_flow_business2_attestation.md)
+- [业务 3：执行层](./docs/teku/chapter_sync_flow_business3_execution.md)
+- [业务 4：Checkpoint Sync](./docs/teku/chapter_sync_flow_business4_checkpoint.md)
+- [业务 5：Aggregate](./docs/teku/chapter_sync_flow_business5_aggregate.md)
+- [业务 6：Initial Sync](./docs/teku/chapter_sync_flow_business6_initial.md)
+- [业务 7：Regular Sync](./docs/teku/chapter_sync_flow_business7_regular.md)
+
 ### 📊 对比分析
 
 - [同步策略对比](./comparison/sync_strategies.md) - Initial Sync、Regular Sync 差异
@@ -73,16 +99,19 @@ title: 首页
 ## 🚀 阅读建议
 
 ### 初学者路径
+
 1. 从 [Prysm 第 1 章](./docs/prysm/chapter_01_pos_overview.md) 开始了解 PoS 基础
 2. 阅读 [第 2 章](./docs/prysm/chapter_02_beacon_architecture.md) 理解节点架构
 3. 学习 [第 17 章](./docs/prysm/chapter_17_initial_sync_overview.md) 了解同步流程
 
 ### 开发者路径
+
 1. 查看 [第 3 章](./docs/prysm/chapter_03_sync_module_design.md) 理解模块设计
 2. 深入 [第 4-6 章](./docs/prysm/chapter_04_libp2p_stack.md) 掌握 P2P 网络
 3. 研究 [第 18 章](./docs/prysm/chapter_18_full_sync.md) 学习实现细节
 
 ### 客户端对比
+
 1. 阅读 [Prysm 文档](./docs/prysm/)
 2. 对比 [Teku 实现](./docs/teku/)（即将完成）
 3. 查看 [对比分析](./comparison/sync_strategies.md)
@@ -114,6 +143,7 @@ Prysm 进度:   28/45 章 (62.2%)
 ## 📝 最近更新
 
 ### 2026-01-13 (最新)
+
 - 🔄 **重大重构**: 转型为多客户端文档中心
 - ✅ Prysm 文档迁移至 `docs/prysm/`
 - ✅ 创建 Teku 文档框架

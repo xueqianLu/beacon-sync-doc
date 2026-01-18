@@ -1,0 +1,25 @@
+@startuml business4_checkpoint_loading
+title B4 Checkpoint Loading（Teku）- 检查点加载
+
+start
+
+:节点启动;
+:读取 checkpoint 配置
+(--initial-state / --initial-state-url);
+
+if (配置来源?) then (URL)
+  :CheckpointStateDownloader.downloadFromUrl();
+  :HTTP GET 下载 SSZ BeaconState;
+elseif (配置来源?) then (FILE)
+  :StateLoader.loadFromFile();
+  :读取本地 SSZ 文件;
+else (缺失)
+  :无 checkpoint 配置;
+  stop
+endif
+
+:解码 BeaconState;
+:得到 checkpoint slot/stateRoot;
+
+stop
+@enduml

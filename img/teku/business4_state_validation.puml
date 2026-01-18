@@ -1,0 +1,29 @@
+@startuml business4_state_validation
+title B4 State Validation（Teku）- Weak Subjectivity 验证
+
+start
+
+:输入 (checkpoint, state);
+:WeakSubjectivityValidator.validateCheckpoint();
+
+:计算 stateRoot = hash_tree_root(state);
+if (stateRoot 匹配 checkpoint.root?) then (否)
+  :验证失败: State root mismatch;
+  stop
+endif
+
+:计算 currentEpoch;
+:计算 wsPeriod;
+if (checkpointEpoch + wsPeriod >= currentEpoch?) then (否)
+  :验证失败: outside weak subjectivity period;
+  stop
+endif
+
+if (state.finalizedCheckpoint == checkpoint?) then (否)
+  :验证失败: checkpoint not finalized;
+  stop
+endif
+
+:验证通过;
+stop
+@enduml

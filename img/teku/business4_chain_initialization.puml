@@ -1,0 +1,17 @@
+@startuml business4_chain_initialization
+title B4 Chain Initialization（Teku）- 从检查点初始化链
+
+start
+
+:输入 (state, block);
+:RecentChainData.initializeFromCheckpoint(state, block);
+
+:ForkChoice.initializeFromCheckpoint();
+:设置 justified/finalized checkpoints;
+:设置 head 为 checkpoint 分支;
+
+:持久化关键数据到数据库;
+:LOG.info("Chain initialized from checkpoint");
+
+stop
+@enduml

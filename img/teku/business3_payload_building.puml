@@ -1,0 +1,41 @@
+@startuml business3_payload_building
+title B3 Payload Building（Teku）- Payload 构建流程
+
+start
+
+:CL Proposer 被选中，准备提议 slot 区块;
+:构造 ForkchoiceState
+(head/safe/finalized);
+:构造 PayloadAttributes
+(timestamp, prevRandao, feeRecipient, withdrawals...);
+
+:ExecutionEngineClient.forkChoiceUpdated();
+note right
+  Engine API: engine_forkchoiceUpdatedV2
+  - 更新 EL 视角的 head/safe/finalized
+  - 提供 payload attributes
+  - 返回 payloadId（或直接返回可用信息）
+end note
+
+:获取 payloadId;
+
+if (启用 Builder/MEV-Boost?) then (是)
+  :BuilderClient.getPayload();
+  note right
+    通过 Builder 获取更优 payload（可选）
+  end note
+
+  if (Builder 成功?) then (是)
+    :使用 Builder 返回的 ExecutionPayload;
+  else (否)
+    :记录告警并降级到本地 EL;
+    :ExecutionEngineClient.getPayload(payloadId);
+  endif
+else (否)
+  :ExecutionEngineClient.getPayload(payloadId);
+endif
+
+:返回 ExecutionPayload 给打包阶段;
+
+stop
+@enduml
