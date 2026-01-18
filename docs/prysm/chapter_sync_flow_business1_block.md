@@ -8,7 +8,7 @@
 
 ### 主流程
 
-![业务 1：区块主线](img/business1.png)
+![业务 1：区块主线](../../img/prysm/business1.png)
 
 子流程跳转：
 
