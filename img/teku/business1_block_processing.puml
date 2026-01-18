@@ -6,9 +6,7 @@ start
 :BlockValidator.validate(block);
 
 partition "Stage 1: 预验证" {
-  :SafeFuture.of(() -> {
-    preValidate(block);
-  })|
+  :SafeFuture.of(() -> preValidate(block));
   
   :检查结构完整性;
   :检查 proposer index 有效;
@@ -21,8 +19,7 @@ partition "Stage 1: 预验证" {
 }
 
 partition "Stage 2: 签名验证" {
-  :thenCompose:
-  BatchSignatureVerifier.verify()|
+  :thenCompose(BatchSignatureVerifier.verify());
   
   :添加到批量验证队列;
   
@@ -39,8 +36,7 @@ partition "Stage 2: 签名验证" {
 }
 
 partition "Stage 3: 状态转换" {
-  :thenCompose:
-  检查父块;
+  :thenCompose(检查父块);
   
   if (父块存在?) then (否)
     :返回 SAVE_FOR_FUTURE;
@@ -50,7 +46,7 @@ partition "Stage 3: 状态转换" {
   endif
   
   :getParentState();
-  :spec.processBlock(parentState, block)|
+  :spec.processBlock(parentState, block);
   note right: 执行状态转换
   
   if (状态转换成功?) then (否)
@@ -60,16 +56,15 @@ partition "Stage 3: 状态转换" {
 }
 
 partition "导入与持久化" {
-  :thenCompose:
-  BlockImporter.importBlock()|
+  :thenCompose(BlockImporter.importBlock());
   
   :写入 Database;
   :更新 RecentChainData;
   
-  :ForkChoice.onBlock()|
+  :ForkChoice.onBlock();
   note right: 更新 fork choice 权重
   
-  :processHead()|
+  :processHead();
   note right: 可能触发 head 变更
   
   :EventBus.post(BlockImportedEvent);

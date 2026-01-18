@@ -9,7 +9,7 @@ partition 交易提交 {
 
 partition Payload 构建 {
   :CL Proposer 准备提议区块;
-  :ExecutionEngineClient.forkChoiceUpdated()|
+  :ExecutionEngineClient.forkChoiceUpdated();
   note right
     Engine API: engine_forkchoiceUpdatedV2
     - 更新 Head/Safe/Finalized
@@ -19,15 +19,15 @@ partition Payload 构建 {
   :EL 返回 payloadId;
   
   if (使用 Builder?) then (是)
-    :BuilderClient.getPayload()|
+    :BuilderClient.getPayload();
     note right: MEV-Boost Builder
     
     if (Builder 成功?) then (否)
       :降级到本地 EL;
-      :ExecutionEngineClient.getPayload(payloadId)|
+      :ExecutionEngineClient.getPayload(payloadId);
     endif
   else (否)
-    :ExecutionEngineClient.getPayload(payloadId)|
+    :ExecutionEngineClient.getPayload(payloadId);
   endif
   
   :返回 ExecutionPayload;
@@ -49,7 +49,7 @@ partition Payload 执行 {
     :同步 EL 验证;
   endif
   
-  :ExecutionEngineClient.newPayload()|
+  :ExecutionEngineClient.newPayload();
   note right
     Engine API: engine_newPayloadV2
     EL 执行交易并返回状态
@@ -58,7 +58,7 @@ partition Payload 执行 {
   if (Payload 状态?) then (VALID)
     :标记区块为已验证;
     :更新 Fork Choice;
-  else (INVALID)
+  elseif (Payload 状态?) then (INVALID)
     :拒绝区块;
     :惩罚提供者 peer;
     :触发 Reorg;
