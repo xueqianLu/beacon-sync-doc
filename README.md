@@ -25,7 +25,7 @@
 | **[Prysm](./docs/prysm/)**           | Go         | 28/45 章 (62.2%) | [查看文档](./docs/prysm/README.md)      |
 | **[Teku](./docs/teku/)**             | Java       | 28/45 章 (62.2%) | [查看文档](./docs/teku/README.md)       |
 | **[Lighthouse](./docs/lighthouse/)** | Rust       | 28/45 章 (62.2%) | [查看文档](./docs/lighthouse/README.md) |
-| **Nimbus**                           | Nim        | 计划中           | -                                       |
+| **[Nimbus](./docs/nimbus/)**         | Nim        | 框架已建立       | [查看文档](./docs/nimbus/README.md)     |
 | **Lodestar**                         | TypeScript | 计划中           | -                                       |
 
 ### 客户端对比分析
@@ -165,6 +165,7 @@ Lighthouse:   28/45 章 (62.2%)
 - **Prysm**: [github.com/prysmaticlabs/prysm](https://github.com/prysmaticlabs/prysm) (Go)
 - **Teku**: [github.com/Consensys/teku](https://github.com/Consensys/teku) (Java)
 - **Lighthouse**: [github.com/sigp/lighthouse](https://github.com/sigp/lighthouse) (Rust)
+- **Nimbus**: [github.com/status-im/nimbus-eth2](https://github.com/status-im/nimbus-eth2) (Nim)
 
 ### 协议规范
 

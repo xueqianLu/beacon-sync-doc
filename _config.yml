@@ -71,6 +71,8 @@ navigation:
     url: /docs/prysm/
   - title: Teku
     url: /docs/teku/
+  - title: Nimbus
+    url: /docs/nimbus/
   - title: 客户端对比
     url: /comparison/
   - title: 共享资源

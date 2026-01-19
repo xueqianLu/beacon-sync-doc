@@ -69,7 +69,7 @@ title: 首页
 - **[Prysm 文档](./docs/prysm/README.md)** - Go 实现，28 章完成
 - **[Teku 文档](./docs/teku/README.md)** - Java 实现，28 章完成
 - **[Lighthouse 文档](./docs/lighthouse/README.md)** - Rust 实现，28 章完成
-- **Nimbus** - Nim 实现（计划中）
+- **[Nimbus 文档](./docs/nimbus/README.md)** - Nim 实现（基线：`v25.12.0`，框架已建立）
 
 ### 同步流程图章节索引
 
