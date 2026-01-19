@@ -32,6 +32,25 @@ Range Sync 细化流程（SyncingChain → batches → BlocksByRange → 批次�
 - `SyncingChain`：表示一个需要下载的链段（包含 target head slot/root、batches、peer pool 等）
   - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/sync/range_sync/chain.rs
 
+### 18.1.1 代码速览：SyncingChain 的关键字段（简化伪代码）
+
+```rust
+// beacon_node/network/src/sync/range_sync/chain.rs（简化示意）
+struct SyncingChain {
+    target_head_slot: Slot,
+    target_head_root: Hash256,
+
+    // 批次（通常按 epoch 切片）
+    batches: Vec<Batch>,
+
+    // 同意该 target head 的 peer 集合
+    peers: HashSet<PeerId>,
+
+    // “更靠近 head 的优先处理点”
+    optimistic_start: Option<BatchId>,
+}
+```
+
 ---
 
 ## 18.2 Batch 粒度与重试策略
@@ -51,6 +70,25 @@ range sync 的关键参数：
 文档建议强调：
 
 - 下载失败与处理失败是不同维度的失败；处理失败（invalid batch）可能带来 peer penalty。
+
+### 18.2.1 代码速览：batch 调度与重试（简化伪代码）
+
+```rust
+fn drive_range_sync(chain: &mut SyncingChain) {
+  // 1) 先请求缺失的 batches（可能并行）
+  for batch in chain.batches_to_download() {
+    request_blocks_by_range(batch, choose_peer(&chain.peers));
+  }
+
+  // 2) 收到 blocks 后组装/校验 batch
+  for batch in chain.ready_batches() {
+    match process_batch(batch) {
+      Ok(()) => chain.mark_processed(batch),
+      Err(e) => chain.retry_or_penalize(batch, e),
+    }
+  }
+}
+```
 
 ---
 

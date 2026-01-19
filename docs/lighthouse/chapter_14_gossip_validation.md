@@ -72,6 +72,35 @@ processor 通过 `NetworkMessage::ValidationResult` 把验证结果送回网络�
 
 并实际调用 gossipsub 的 `report_message_validation_result`。
 
+### 14.4.1 代码速览：把“验证结果”当作一条消息回传（简化伪代码）
+
+> 关键点：gossipsub 在 `ValidationMode::Anonymous` 下需要一个“异步回传”闭环。
+
+```rust
+// processor 线程（简化示意）
+fn validate_and_report(msg_id: MessageId, peer: PeerId, payload: PubsubMessage) {
+  let acceptance = match validate(payload) {
+    Ok(()) => Accept,
+    Err(SoftFailure) => Ignore,
+    Err(HardFailure) => Reject,
+  };
+
+  // 把结果送回网络线程
+  network_send(NetworkMessage::ValidationResult {
+    msg_id,
+    peer_id: peer,
+    acceptance,
+  });
+}
+
+// 网络线程（简化示意）
+fn on_network_message(msg: NetworkMessage) {
+  if let NetworkMessage::ValidationResult { msg_id, peer_id, acceptance } = msg {
+    libp2p.report_message_validation_result(msg_id, peer_id, acceptance);
+  }
+}
+```
+
 ---
 
 ## 14.5 Accept / Ignore / Reject 的语义建议

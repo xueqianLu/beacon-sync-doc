@@ -75,7 +75,25 @@ SyncMessage 定义：
 peerdb 侧会把累计错误折算成 disconnect/ban：
 
 - `peer_manager/peerdb/score.rs`
+
   - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/lighthouse_network/src/peer_manager/peerdb/score.rs
+
+  ### 25.3.2 代码速览：从“错误事件”到“可执行动作”（简化伪代码）
+
+  ```rust
+  // network/service.rs（简化示意）
+  enum PeerAction {
+    // 具体动作按实现定义
+    LowToleranceError,
+    HighToleranceError,
+    Disconnect,
+  }
+
+  fn on_sync_error(peer: PeerId, err: RpcError) {
+    let action = classify_error(err);
+    network_send(NetworkMessage::ReportPeer { peer_id: peer, action });
+  }
+  ```
 
 ### 25.3.1 常见惩罚来源（读代码时的检索建议）
 

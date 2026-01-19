@@ -21,6 +21,37 @@ Lighthouse 对 gossipsub 的事件入口在网络栈 Service：
 
 > 重要：Lighthouse 在 `inject_gs_event` decode 失败时会立刻向 gossipsub 上报 `Reject`，避免传播无法解码的数据。
 
+### 11.1.1 代码速览：从 libp2p event 到 NetworkEvent（简化伪代码）
+
+> 提示：以下为“结构与调用关系”的**简化伪代码**（非逐行源码拷贝）。精确实现以链接中的 v8.0.1 源码为准。
+
+```rust
+// lighthouse_network/service/mod.rs（简化示意）
+fn inject_gs_event(event: GossipsubEvent) {
+  match event {
+    GossipsubEvent::Message { id, source, data, topic } => {
+      // 1) snappy 解压 + SSZ decode
+      let decoded: Result<PubsubMessage, DecodeError> = PubsubMessage::decode(&data);
+
+      // 2) decode 失败：立刻 Reject（不进入上层 router/processor）
+      if decoded.is_err() {
+        gossipsub.report_message_validation_result(&id, source, Reject);
+        return;
+      }
+
+      // 3) decode 成功：上抛给 beacon_node/network
+      emit(NetworkEvent::PubsubMessage {
+        id,
+        peer_id: source,
+        topic,
+        message: decoded.unwrap(),
+      });
+    }
+    _ => { /* 其他事件 */ }
+  }
+}
+```
+
 ---
 
 ## 11.2 GossipsubConfig：验证模式、MessageId、缓存窗口
@@ -67,6 +98,25 @@ Lighthouse 的关键设计：gossipsub 层只做 **decode**，真正的 **共识
 3. `NetworkBeaconProcessor` 验证后发送 `NetworkMessage::ValidationResult`
 4. `network/service.rs` 收到 ValidationResult，调用 `libp2p.report_message_validation_result(...)`
 5. `lighthouse_network/service` 最终调用 `gossipsub.report_message_validation_result(...)`，决定是否传播
+
+### 11.4.1 代码速览：ValidationResult 的闭环消息（简化伪代码）
+
+```rust
+// beacon_node/network/service.rs（简化示意）
+enum NetworkMessage {
+  ValidationResult {
+    msg_id: MessageId,
+    peer_id: PeerId,
+    acceptance: MessageAcceptance, // Accept | Ignore | Reject
+  },
+  // ...
+}
+
+// lighthouse_network/service/mod.rs（简化示意）
+fn report_message_validation_result(msg_id: MessageId, peer: PeerId, a: MessageAcceptance) {
+  gossipsub.report_message_validation_result(&msg_id, peer, a);
+}
+```
 
 关键源码：
 

@@ -53,6 +53,32 @@ block lookup 的最大搜索深度：
 
 超过深度时会 **force trigger range sync**（避免在长 parent chain 上死磕）。
 
+### 23.2.1 代码速览：lookup 深度兜底 + 退化 range sync（简化伪代码）
+
+```rust
+// beacon_node/network/src/sync/block_lookups/*（简化示意）
+fn on_unknown_parent(child_root: Hash256) {
+  let mut depth = 0;
+  let mut current = child_root;
+
+  while depth < PARENT_DEPTH_TOLERANCE {
+    if db.contains_block(current) {
+      break;
+    }
+
+    // 递归补齐：BlocksByRoot(current)
+    request_blocks_by_root(current);
+    current = parent_of(current)?; // 由响应驱动更新（事件驱动状态机）
+    depth += 1;
+  }
+
+  if depth >= PARENT_DEPTH_TOLERANCE {
+    // 长链兜底：避免 stuck
+    force_trigger_range_sync();
+  }
+}
+```
+
 ---
 
 ## 23.3 SyncManager：Missing Parent 与 Unknown Root 事件

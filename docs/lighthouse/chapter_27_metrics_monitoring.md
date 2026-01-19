@@ -27,6 +27,22 @@ Lighthouse 为网络与同步提供了较丰富的 metrics：既覆盖 libp2p（
 - Gossip：`gossipsub_failed_publishes_*`、`gossipsub_unaccepted_messages_per_client`
 - Peer 评分分布：`peer_score_distribution`、`peer_score_per_client`
 
+### 27.1.1 代码速览：metrics 定义通常长什么样（简化伪代码）
+
+> 提示：以下展示的是“Rust metrics 声明形态”的简化示意（便于你在源码里快速 grep 对应名称）。
+
+```rust
+// lighthouse_network/src/metrics.rs（简化示意）
+static GOSSIPSUB_UNACCEPTED_MESSAGES_PER_CLIENT: CounterVec = CounterVec::new(
+   "gossipsub_unaccepted_messages_per_client",
+   &["client", "reason"],
+);
+
+fn on_validation_result(client: &str, reason: &str) {
+   GOSSIPSUB_UNACCEPTED_MESSAGES_PER_CLIENT.with_label_values(&[client, reason]).inc();
+}
+```
+
 ---
 
 ## 27.2 Beacon Node network 指标
@@ -75,6 +91,16 @@ Lighthouse 为网络与同步提供了较丰富的 metrics：既覆盖 libp2p（
    - 看 `beacon_processor_*_imported_total` 与 import errors
 3. “为什么 peer 频繁断开？”
    - 看 `libp2p_peer_actions_per_client` 与 peer_score 分布
+
+### 27.3.2 PromQL/看板示例（配置片段）
+
+```promql
+# 过去 5 分钟内，gossip 被 Reject 的增长率（按 client 聚合）
+sum by (client) (rate(gossipsub_unaccepted_messages_per_client{reason="reject"}[5m]))
+
+# RPC errors 增长率（按 client 聚合）
+sum by (client) (rate(libp2p_rpc_errors_per_client[5m]))
+```
 
 ---
 

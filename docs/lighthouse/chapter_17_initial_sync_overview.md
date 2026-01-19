@@ -42,6 +42,26 @@ Initial Sync 的主线（SyncManager 判定 → RangeSync/Backfill/Lookup → �
 - `SLOT_IMPORT_TOLERANCE = 32`：用于判断“我是否足够接近 head”
   - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/sync/manager.rs
 
+### 17.1.1 代码速览：SyncManager 的决策骨架（简化伪代码）
+
+```rust
+// beacon_node/network/src/sync/manager.rs（简化示意）
+fn on_tick(peers_head_slot: Slot, local_head_slot: Slot) {
+  if peers_head_slot > local_head_slot + SLOT_IMPORT_TOLERANCE {
+    // 落后太多：倾向 range sync
+    start_or_continue_range_sync();
+  } else {
+    // 已接近 head：进入常态 gossip 驱动
+    network_send(NetworkMessage::SubscribeCoreTopics);
+  }
+}
+
+fn on_unknown_parent(block_root: Hash256) {
+  // 常态兜底：触发 block lookup（BlocksByRoot 递归）
+  block_lookups.start(block_root);
+}
+```
+
 ---
 
 ## 17.2 Sync 模块结构
@@ -71,6 +91,27 @@ Sync 相关子模块位于：
 
 - `beacon_node/network/src/router.rs`
   - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/router.rs
+
+### 17.3.1 代码速览：router 把 RPC 响应“翻译”成 SyncMessage（简化伪代码）
+
+```rust
+// beacon_node/network/src/router.rs（简化示意）
+fn on_blocks_by_range_response(peer: PeerId, req_id: RequestId, block: SignedBeaconBlock) {
+  sync_send(SyncMessage::RpcBlock {
+    peer_id: peer,
+    request_id: req_id,
+    block,
+  });
+}
+
+fn on_rpc_error(peer: PeerId, req_id: RequestId, err: RpcError) {
+  sync_send(SyncMessage::RpcError {
+    peer_id: peer,
+    request_id: req_id,
+    error: err,
+  });
+}
+```
 
 ---
 

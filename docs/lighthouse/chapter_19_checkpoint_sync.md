@@ -51,6 +51,25 @@ Beacon node client 在构建链时，会根据启动配置选择 genesis 来源�
 - `beacon_node/client/src/builder.rs`
   - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/client/src/builder.rs
 
+### 19.1.1 代码速览：genesis 来源选择（简化伪代码）
+
+```rust
+// beacon_node/client/src/builder.rs（简化示意）
+enum ClientGenesis {
+  FromGenesisState,
+  WeakSubjSszBytes { bytes: Vec<u8> },
+  CheckpointSyncUrl { url: Url },
+}
+
+fn build_chain(genesis: ClientGenesis) {
+  match genesis {
+    ClientGenesis::FromGenesisState => init_from_genesis(),
+    ClientGenesis::WeakSubjSszBytes { bytes } => init_from_ws_bytes(bytes),
+    ClientGenesis::CheckpointSyncUrl { url } => init_from_checkpoint_url(url),
+  }
+}
+```
+
 ---
 
 ## 19.2 核心构建：BeaconChainBuilder::weak_subjectivity_state
@@ -66,6 +85,29 @@ Beacon node client 在构建链时，会根据启动配置选择 genesis 来源�
 2. **state 最新块头与 checkpoint block root 一致性校验**。
 3. **genesis_validators_root 校验**：避免错误网络（mainnet/testnet）混用。
 4. **Deneb blobs 校验**（若提供 blobs）：commitment 数量/内容必须匹配 block。
+
+### 19.2.1 代码速览：weak subjectivity state 的关键校验点（简化伪代码）
+
+```rust
+// beacon_node/beacon_chain/src/builder.rs（简化示意）
+fn weak_subjectivity_state(state: BeaconState, block: SignedBeaconBlock, blobs: Option<Blobs>) -> Result<()> {
+  // 1) network 安全：避免 mainnet/testnet 混用
+  ensure!(state.genesis_validators_root == expected_root);
+
+  // 2) 统一到 epoch boundary（保证后续同步/验证更稳定）
+  let state = process_slots_to_epoch_boundary_if_needed(state);
+
+  // 3) state 与 checkpoint block 的一致性
+  ensure!(state.latest_block_header.root() == block.canonical_root());
+
+  // 4) Deneb：blobs 与 block 匹配
+  if let Some(blobs) = blobs {
+    ensure!(verify_blobs_against_block(&blobs, &block));
+  }
+
+  Ok(())
+}
+```
 
 ---
 

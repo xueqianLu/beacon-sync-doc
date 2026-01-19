@@ -36,8 +36,30 @@
    - `propagate_validation_result`
    - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/network_beacon_processor/gossip_methods.rs
 5. network/service 转发到 libp2p，最终调用 gossipsub 的 `report_message_validation_result`
+
    - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/service.rs
    - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/lighthouse_network/src/service/mod.rs
+
+   ### 22.1.1 代码速览：把“管线”抽象成事件与消息（简化伪代码）
+
+   > 目标：用最少的类型把两条路径（gossip/rpc）统一起来看。
+
+   ```rust
+   // 网络栈向上抛事件（简化示意）
+   enum NetworkEvent {
+      PubsubMessage { id: MessageId, peer: PeerId, msg: PubsubMessage },
+      RpcBlock { peer: PeerId, request_id: RequestId, block: SignedBeaconBlock },
+      RpcError { peer: PeerId, request_id: RequestId, error: RpcError },
+   }
+
+   // network/service 对外的“动作”接口（简化示意）
+   enum NetworkMessage {
+      // 控制订阅
+      SubscribeCoreTopics,
+      // 把验证结果回传到 gossipsub
+      ValidationResult { msg_id: MessageId, peer_id: PeerId, acceptance: MessageAcceptance },
+   }
+   ```
 
 ---
 
@@ -49,6 +71,23 @@
    - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/router.rs
 3. router 将响应片段包装为 `SyncMessage::{RpcBlock,...}` 发送给 sync manager
 4. sync manager（range sync / lookup）决定是否请求更多、如何组 batch、以及何时提交给 processor
+
+### 22.2.1 代码速览：RPC 响应如何“进入同步状态机”（简化伪代码）
+
+```rust
+fn on_rpc_block(peer: PeerId, req: RequestId, block: SignedBeaconBlock) {
+   // router 侧：翻译成 sync message
+   sync_send(SyncMessage::RpcBlock { peer_id: peer, request_id: req, block });
+}
+
+fn sync_on_message(msg: SyncMessage) {
+   match msg {
+      SyncMessage::RpcBlock { .. } => range_sync_or_lookup.consume_block(msg),
+      SyncMessage::RpcError { .. } => range_sync_or_lookup.on_error(msg),
+      _ => {}
+   }
+}
+```
 
 sync manager 入口：
 
