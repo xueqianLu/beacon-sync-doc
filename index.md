@@ -53,7 +53,7 @@ title: 首页
 
 #### 🟩 [Lighthouse (Rust)](./docs/lighthouse/)
 
-- ✅ **10/45 章完成** (22.2%)
+- ✅ **28/45 章完成** (62.2%)
 - 基础概念、P2P 网络
 - Req/Resp（Status / BlocksByRange / BlocksByRoot）
 - 基于源码版本：`v8.0.1`
@@ -68,7 +68,7 @@ title: 首页
 
 - **[Prysm 文档](./docs/prysm/README.md)** - Go 实现，28 章完成
 - **[Teku 文档](./docs/teku/README.md)** - Java 实现，28 章完成
-- **[Lighthouse 文档](./docs/lighthouse/README.md)** - Rust 实现，10 章完成
+- **[Lighthouse 文档](./docs/lighthouse/README.md)** - Rust 实现，28 章完成
 - **Nimbus** - Nim 实现（计划中）
 
 ### 🗺️ 同步流程图章节索引
@@ -94,6 +94,17 @@ title: 首页
 - [业务 5：Aggregate](./docs/teku/chapter_sync_flow_business5_aggregate.md)
 - [业务 6：Initial Sync](./docs/teku/chapter_sync_flow_business6_initial.md)
 - [业务 7：Regular Sync](./docs/teku/chapter_sync_flow_business7_regular.md)
+
+#### Lighthouse
+
+- [流程图总览](./docs/lighthouse/chapter_sync_flow_diagrams.md)
+- [业务 1：区块处理](./docs/lighthouse/chapter_sync_flow_business1_block.md)
+- [业务 2：Attestation](./docs/lighthouse/chapter_sync_flow_business2_attestation.md)
+- [业务 3：执行层](./docs/lighthouse/chapter_sync_flow_business3_execution.md)
+- [业务 4：Checkpoint Sync](./docs/lighthouse/chapter_sync_flow_business4_checkpoint.md)
+- [业务 5：Aggregate](./docs/lighthouse/chapter_sync_flow_business5_aggregate.md)
+- [业务 6：Initial Sync](./docs/lighthouse/chapter_sync_flow_business6_initial.md)
+- [业务 7：Regular Sync](./docs/lighthouse/chapter_sync_flow_business7_regular.md)
 
 ### 📊 对比分析
 
@@ -136,7 +147,7 @@ title: 首页
 客户端覆盖:   3/5 (Prysm ✅, Teku ✅, Lighthouse ✅)
 Prysm 进度:   28/45 章 (62.2%)
 Teku 进度:    28/45 章 (62.2%)
-Lighthouse:   10/45 章 (22.2%)
+Lighthouse:   28/45 章 (62.2%)
 总行数:       25,000+ 行
 代码示例:     350+ 段
 流程图:       80+ 个
