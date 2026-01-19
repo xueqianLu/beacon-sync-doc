@@ -1,0 +1,45 @@
+@startuml business4_checkpoint_fetch_state
+Title Lighthouse Checkpoint Sync / 从 URL 获取 checkpoint state+block（细化）
+
+start
+
+partition "入口" {
+  :ClientGenesis::CheckpointSyncUrl { url };
+  :client/builder 通过 HTTP client 下载 checkpoint 数据;
+}
+
+partition "下载 finalized state" {
+  :GET /eth/v2/debug/beacon/states/finalized;
+  if (下载失败?) then (失败)
+    :返回错误 -> 终止 checkpoint sync;
+    stop
+  endif
+}
+
+partition "下载 finalized block" {
+  :GET /eth/v2/beacon/blocks/finalized;
+  if (下载失败?) then (失败)
+    :返回错误 -> 终止 checkpoint sync;
+    stop
+  endif
+}
+
+partition "可选：下载 blobs" {
+  if (Deneb+ 且需要 blobs?) then (是)
+    :尝试按分叉/接口选择 blobs 下载 API;
+    if (下载失败但允许缺省?) then (允许)
+      :继续（由 builder 做一致性检查/或按分叉跳过）;
+    else (不允许)
+      :返回错误;
+      stop
+    endif
+  endif
+}
+
+partition "交给 builder" {
+  :调用 BeaconChainBuilder.weak_subjectivity_state(state, block, blobs?);
+}
+
+stop
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml business2_attestation_processing
+title B2 Attestation Processing（证明处理）(Lighthouse)
+
+start
+
+partition "验证" {
+  :gossip 规则（slot/propagation/重复等）;
+  :签名验证;
+  :committee/aggregation bits 校验;
+}
+
+partition "应用" {
+  :写入 attestation pool;
+  :推动 fork choice（权重/投票）;
+}
+
+partition "回传" {
+  :propagate_validation_result(Accept/Ignore/Reject);
+}
+
+stop
+
+@enduml

@@ -1,0 +1,55 @@
+@startuml business7_block_lookup_missing_parent
+Title Lighthouse Missing Parent / Block Lookup 业务线: UnknownParent -> BlocksByRoot -> 递归补齐 -> 超时兜底 -> 可能退化 RangeSync
+
+start
+
+partition "触发条件" {
+  :触发来源:
+  - gossip block 的 parent 不在本地
+  - attestation 指向未知 block root
+  - rpc 导入过程中发现缺失组件;
+  :SyncManager 接收:
+  - SyncMessage::UnknownParentBlock
+  - SyncMessage::UnknownBlockHashFromAttestation;
+}
+
+partition "BlockLookups 状态机" {
+  :为 root 创建 lookup 状态;
+  :检查 lookup cache/ignored_chains (短期忽略失败链);
+  if (lookup 深度 > PARENT_DEPTH_TOLERANCE) then (太深)
+    :force trigger RangeSync 兜底;
+    stop
+  endif
+}
+
+partition "发送 BlocksByRoot 请求" {
+  :从 peers 选择合适 peer;
+  :通过 NetworkContext 分配 sync_request_id;
+  :发送 BeaconBlocksByRoot([root]);
+  :Router.on_blocks_by_root_response -> SyncMessage::RpcBlock;
+}
+
+partition "处理响应与递归" {
+  if (收到 block?) then (是)
+    :尝试导入该 block;
+    if (仍缺 parent) then (继续)
+      :将 parentRoot 作为下一个 lookup root;
+      :递归触发下一轮 BlocksByRoot;
+    else (补齐)
+      :lookup 完成;
+    endif
+  else (未收到)
+    :等待/重试;
+  endif
+}
+
+partition "超时兜底" {
+  if (lookup 超时/无 peers/卡死?) then (是)
+    :终止该 lookup;
+    :记录日志/metrics;
+  endif
+}
+
+stop
+
+@enduml

@@ -1,0 +1,46 @@
+@startuml business4_checkpoint_sync_flow
+Title Lighthouse Checkpoint Sync（Weak Subjectivity）业务主线: 获取 checkpoint -> 构建 weak subjectivity state -> 前向同步到 head -> Backfill 回填
+
+start
+
+partition "获取 Checkpoint（配置/来源）" {
+  :用户/运维配置 checkpoint 来源;
+  :ClientGenesis 分支:
+  - WeakSubjSszBytes (本地 SSZ)
+  - CheckpointSyncUrl (远端 URL);
+}
+
+partition "从 URL 下载（若启用 CheckpointSyncUrl）" {
+  if (CheckpointSyncUrl?) then (是)
+    :HTTP 下载 finalized state + finalized block;
+    :必要时下载 blobs (分叉/接口兼容分支);
+    :返回 (state, block, blobs?) 给 builder;
+  endif
+}
+
+partition "构建 weak subjectivity state" {
+  :BeaconChainBuilder.weak_subjectivity_state(...);
+  :校验:
+  - state epoch boundary 对齐
+  - latest_block_header root 与 block root 一致
+  - genesis_validators_root 一致
+  - (Deneb+) blobs commitments 一致;
+  :写入 DB + 初始化 forkchoice anchor;
+}
+
+partition "前向同步到 head" {
+  :使用 RangeSync (BlocksByRange) 从 checkpointSlot+1 前向追到 head;
+  :同步接近 head 后:
+  - SubscribeCoreTopics
+  - 进入 Regular Sync;
+}
+
+partition "Backfill 回填历史（可选）" {
+  if (需要完整历史?) then (是)
+    :BackfillSync 从 genesis 回填历史 blocks;
+  endif
+}
+
+stop
+
+@enduml

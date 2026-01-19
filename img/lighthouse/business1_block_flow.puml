@@ -1,0 +1,40 @@
+@startuml business1_block_flow
+title Business 1: 区块生成 -> 区块发出 -> 区块接收 -> 区块处理 (Lighthouse)
+
+partition 生成 {
+  :Validator/BN 触发提议 (slot 到达);
+  :构建 SignedBeaconBlock (含 execution payload);
+  :签名并产出 blockRoot;
+}
+
+partition 发出 {
+  if (传播路径?) then (实时广播)
+    :Gossipsub beacon_block;
+    :编码: SSZ -> Snappy;
+    :lighthouse_network.publish(PubsubMessage::BeaconBlock);
+  else (历史/补齐)
+    :Req/Resp: BlocksByRange / BlocksByRoot;
+    :响应来自 router -> sync;
+  endif
+}
+
+partition 接收 {
+  :libp2p gossipsub 收到消息;
+  :inject_gs_event decode -> PubsubMessage;
+  :router.handle_gossip 分发;
+}
+
+partition 验证与处理 {
+  :NetworkBeaconProcessor 预检/验证;
+  if (父块存在?) then (是)
+    :导入到 BeaconChain;
+    :更新 fork choice;
+    :回传 Accept 给 gossipsub;
+  else (否)
+    :触发 SyncMessage::UnknownParentBlock;
+    :BlockLookups 递归补齐;
+    :回传 Ignore/Reject（视策略）;
+  endif
+}
+
+@enduml

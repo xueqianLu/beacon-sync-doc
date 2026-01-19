@@ -1,0 +1,22 @@
+@startuml business7_gossipsub_subscription
+title Business 7: Gossipsub Subscription（订阅管理）(Lighthouse)
+
+start
+
+partition "初始化" {
+  :根据 fork digest 计算 topics;
+  :订阅 beacon_block / attestations / aggregates ...;
+}
+
+partition "运行时调整" {
+  if (duties 变化?) then (是)
+    :调整 attestation subnets;
+  endif
+  if (fork 发生?) then (是)
+    :切换到新 fork digest topics;
+  endif
+}
+
+stop
+
+@enduml

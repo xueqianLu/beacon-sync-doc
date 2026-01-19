@@ -1,0 +1,19 @@
+@startuml business2_attestation_receive
+title B2 Attestation Receive（证明接收）(Lighthouse)
+
+start
+
+partition "入站 decode" {
+  :gossipsub Event::Message;
+  :SnappyTransform 解压;
+  :PubsubMessage::decode -> Attestation;
+}
+
+partition "路由" {
+  :router.handle_gossip;
+  :send_gossip_attestation;
+}
+
+stop
+
+@enduml

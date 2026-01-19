@@ -1,0 +1,18 @@
+@startuml business2_attestation_broadcast
+title B2 Attestation Broadcast（证明广播）(Lighthouse)
+
+start
+
+partition "编码与发布" {
+  :构造 PubsubMessage::Attestation;
+  :topic = eth2/<fork_digest>/beacon_attestation_<subnet>/ssz_snappy;
+  :publish;
+}
+
+partition "订阅策略" {
+  :subnet 订阅由网络层动态维护（依据 duties/配置）;
+}
+
+stop
+
+@enduml

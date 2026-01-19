@@ -1,0 +1,31 @@
+@startuml business4_checkpoint_flow
+title Business 4: Checkpoint Sync 主流程 (Lighthouse)
+
+start
+
+partition "入口" {
+  :节点启动/配置启用 checkpoint sync;
+  :选择弱主观性/远端 checkpoint;
+}
+
+partition "加载 checkpoint" {
+  :下载并验证 checkpoint state;
+  :初始化本地数据库/链状态;
+}
+
+partition "向前同步" {
+  :从 checkpoint slot 开始 forward sync;
+  :使用 BlocksByRange 拉取并导入;
+}
+
+partition "可选 backfill" {
+  if (需要历史?) then (是)
+    :启动 backfill（向后补齐）;
+  else (否)
+    :进入 regular sync;
+  endif
+}
+
+stop
+
+@enduml

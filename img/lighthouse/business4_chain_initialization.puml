@@ -1,0 +1,23 @@
+@startuml business4_chain_initialization
+title B4 Chain Initialization（链初始化）(Lighthouse)
+
+start
+
+partition "准备" {
+  :打开 DB;
+  :加载/创建 BeaconChain 实例;
+}
+
+partition "基线" {
+  :以 checkpoint state 作为起点;
+  :设置 head / justified / finalized;
+}
+
+partition "启动同步服务" {
+  :启动 sync manager;
+  :进入 forward sync;
+}
+
+stop
+
+@enduml

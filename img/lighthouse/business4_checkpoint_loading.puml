@@ -1,0 +1,23 @@
+@startuml business4_checkpoint_loading
+title B4 Checkpoint Loading（checkpoint 加载）(Lighthouse)
+
+start
+
+partition "获取" {
+  :获取 checkpoint state / headers / proofs;
+  :来源可能为 HTTP/可信节点（实现依赖配置）;
+}
+
+partition "验证" {
+  :校验 state root 与 checkpoint 一致;
+  :必要的弱主观性检查;
+}
+
+partition "落库" {
+  :写入 state/blocks 索引;
+  :初始化 fork choice 基线;
+}
+
+stop
+
+@enduml

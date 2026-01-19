@@ -1,0 +1,51 @@
+@startuml business6_initial_sync_flow
+Title Lighthouse 初始同步 (Initial Sync) 业务主线: 启动 -> SyncManager 判定 -> RangeSync/Backfill/Lookup -> 接近 head -> 订阅核心 Gossip -> Regular Sync
+
+start
+
+partition "节点启动与网络就绪" {
+  :Beacon Node 启动;
+  :P2P 建立连接 + 状态握手 (Status RPC);
+  :Router 线程开始接收:
+  - gossip (PubsubMessage)
+  - req/resp 响应 (BlocksByRange/BlocksByRoot);
+}
+
+partition "SyncManager: 选择同步路径" {
+  :SyncManager 根据 headSlot 与 peer 的 headSlot 评估差距;
+  if (落后超过 SLOT_IMPORT_TOLERANCE?) then (是)
+    :进入 Range Sync (BlocksByRange 批量拉取);
+  else (否)
+    :保持 Regular Sync/Lookup 模式;
+  endif
+}
+
+partition "Range Sync (range_sync)" {
+  :创建 SyncingChain (target head / peer pool / batches);
+  :并行请求 batches:
+  - 发送 BlocksByRange 请求
+  - 处理流式响应 -> SyncMessage::RpcBlock;
+  :批次处理:
+  - 基础验证/签名/状态转换
+  - 写入 DB + 更新 fork choice;
+}
+
+partition "Checkpoint Sync 后的 Backfill (可选)" {
+  if (节点从可信 checkpoint 启动?) then (是)
+    :先 forward sync 到 head (RangeSync);
+    :随后 BackfillSync 从 genesis 回填历史块;
+  endif
+}
+
+partition "切换到 Regular Sync" {
+  :当接近 head 时:
+  - 标记 synced
+  - 触发 SubscribeCoreTopics 订阅核心 gossip topics;
+  :后续:
+  - gossip 实时跟头
+  - block lookup 兜底缺失块;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,19 @@
+@startuml business7_catch_up
+title Business 7: Catch-up（落后追赶）(Lighthouse)
+
+start
+
+partition "触发" {
+  :检测本地 head 落后网络 head;
+  :或长期未收到有效 blocks;
+}
+
+partition "追赶策略" {
+  :优先 BlocksByRange 批量拉取;
+  :并发限制与 peer 选择;
+  :导入后回到 gossip-driven;
+}
+
+stop
+
+@enduml

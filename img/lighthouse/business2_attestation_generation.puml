@@ -1,0 +1,19 @@
+@startuml business2_attestation_generation
+title B2 Attestation Generation（证明生成）(Lighthouse)
+
+start
+
+partition "触发" {
+  :slot tick;
+  :duties 提供 committee 分配;
+}
+
+partition "生成" {
+  :构造 AttestationData;
+  :签名聚合（validator signing）;
+  :选择目标 subnet;
+}
+
+stop
+
+@enduml

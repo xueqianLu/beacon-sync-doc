@@ -1,0 +1,17 @@
+@startuml business2_attestation_aggregation
+title B2 Attestation Aggregation（证明聚合）(Lighthouse)
+
+start
+
+partition "收集" {
+  :在本地收集同 slot/committee 的 attestations;
+}
+
+partition "聚合" {
+  :生成 AggregateAndProof（或 SignedAggregateAndProof）;
+  :签名并广播 aggregate topic;
+}
+
+stop
+
+@enduml

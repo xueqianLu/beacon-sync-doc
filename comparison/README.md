@@ -12,11 +12,11 @@
 ## 🔍 当前覆盖客户端
 
 - ✅ [Prysm](../docs/prysm/) - Go 实现
-- 🚧 [Teku](../docs/teku/) - Java 实现
-- 🔜 Lighthouse - Rust 实现
+- ✅ [Teku](../docs/teku/) - Java 实现（28/45）
+- ✅ [Lighthouse](../docs/lighthouse/) - Rust 实现（10/45）
 - 🔜 Nimbus - Nim 实现
 - 🔜 Lodestar - TypeScript 实现
 
 ---
 
-**最后更新**: 2026-01-13
+**最后更新**: 2026-01-18

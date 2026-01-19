@@ -1,0 +1,30 @@
+@startuml business4_checkpoint_backfill
+Title Lighthouse Checkpoint Sync / BackfillSync 回填历史（细化）
+
+start
+
+partition "启动条件" {
+  :节点已从 checkpoint 前向同步到 head;
+  :决定是否启用 backfill（保持完整历史）;
+}
+
+partition "backfill 主循环" {
+  :从 checkpointSlot 向 genesis 回退;
+  repeat
+    :选择下一段历史范围 [start, end];
+    :发送 BlocksByRange(start, count, step=1);
+    :收集响应 blocks;
+    :写入 DB（历史块分区/索引）;
+    :end = start;
+  repeat while (尚未回填到 genesis)
+}
+
+partition "失败与重试" {
+  if (下载/处理失败?) then (是)
+    :按 backfill 策略重试或等待新 peer;
+  endif
+}
+
+stop
+
+@enduml

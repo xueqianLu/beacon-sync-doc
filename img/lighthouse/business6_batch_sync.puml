@@ -1,0 +1,24 @@
+@startuml business6_batch_sync
+title Business 6: Batch Sync（批量拉取导入）(Lighthouse)
+
+start
+
+partition "计划" {
+  :确定目标 slot 区间;
+  :选择 peers;
+}
+
+partition "拉取" {
+  :Req/Resp BlocksByRange;
+  :限制 batch 大小与并发;
+}
+
+partition "验证/导入" {
+  :顺序/连续性检查;
+  :验证并写入 BeaconChain;
+  :metrics: blocks/sec;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml business7_state_machine_update
+title Business 7: State Machine Update（状态机更新）(Lighthouse)
+
+start
+
+partition "输入事件" {
+  :Gossip block/attestation;
+  :RPC blocks response;
+  :本地 slot tick;
+}
+
+partition "状态更新" {
+  :导入 block -> 更新 head;
+  :fork choice 处理投票/最终性;
+  :必要时触发 reorg;
+}
+
+partition "输出" {
+  :发布链头变更事件;
+  :metrics/logs;
+}
+
+stop
+
+@enduml

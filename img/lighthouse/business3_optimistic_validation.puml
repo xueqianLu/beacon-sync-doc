@@ -1,0 +1,27 @@
+@startuml business3_optimistic_validation
+title B3 Optimistic Validation（乐观验证）(Lighthouse)
+
+start
+
+partition "动机" {
+  :当 execution 层验证较慢或暂不可用时;
+  :共识层先推进 head（受约束）;
+}
+
+partition "流程" {
+  :接收 block -> 完成共识层验证;
+  :先导入/传播（可能标记为 optimistic）;
+  :异步等待 EL 结果;
+}
+
+partition "收敛" {
+  if (EL 最终确认?) then (确认)
+    :升级为 fully verified;
+  else (失败)
+    :触发回滚/惩罚/分叉选择调整;
+  endif
+}
+
+stop
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml business1_block_processing
+title B1 Block Processing（区块验证与处理）(Lighthouse)
+
+start
+
+partition "快速预检" {
+  :slot/时间窗口检查;
+  :去重/已见检查（duplicate cache 等）;
+}
+
+partition "完整验证" {
+  :签名验证;
+  :状态转换/共识规则;
+  :（post-merge）execution payload 验证/可用性检查;
+}
+
+partition "导入/回传" {
+  if (导入成功?) then (是)
+    :写 DB + 更新 fork choice;
+    :propagate_validation_result(Accept);
+  else (否)
+    :可能 ReportPeer / 惩罚;
+    :propagate_validation_result(Reject/Ignore);
+  endif
+}
+
+stop
+
+@enduml

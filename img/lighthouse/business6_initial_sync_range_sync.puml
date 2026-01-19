@@ -1,0 +1,45 @@
+@startuml business6_initial_sync_range_sync
+Title Lighthouse Range Sync 细化流程: SyncingChain -> batches -> BlocksByRange -> 批次处理 -> 接近 head
+
+start
+
+partition "初始化 SyncingChain" {
+  :创建 SyncingChain(target_head_slot, target_head_root);
+  :EPOCHS_PER_BATCH = 1;
+  :BATCH_BUFFER_SIZE = 5;
+  :peers := 同意该 target 的 peer pool;
+}
+
+partition "请求 batches" {
+  repeat
+    :选择下一个可请求 batch;
+    :选择一个可用 peer;
+    :通过 NetworkContext 分配 sync_request_id;
+    :发送 BeaconBlocksByRange(start_slot, count, step=1);
+    :Router.on_blocks_by_range_response 将 block 片段转成:
+    - SyncMessage::RpcBlock
+    - (以及 blobs/data columns 对应消息);
+  repeat while (仍有 batch 未完成)
+}
+
+partition "批次处理" {
+  :按 slot 顺序处理已下载 batch;
+  :对每个 block 执行:
+  - 验证/导入
+  - 更新 fork choice
+  - 产生 metrics + peer actions;
+  if (batch 处理失败?) then (是)
+    :增加 processing attempt;
+    :必要时更换 peer / 标记该 batch 需要重试;
+  endif
+}
+
+partition "完成条件" {
+  :当 localHeadSlot 接近 currentSlot (<= SLOT_IMPORT_TOLERANCE);
+  :RangeSync 逐步停止;
+  :通知网络层订阅核心 gossip;
+}
+
+stop
+
+@enduml

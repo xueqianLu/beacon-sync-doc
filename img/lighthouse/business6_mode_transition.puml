@@ -1,0 +1,22 @@
+@startuml business6_mode_transition
+title Business 6: Mode Transition（模式切换）(Lighthouse)
+
+start
+
+partition "从 initial -> regular" {
+  :达到接近 head 的阈值;
+  :停止大范围 range 请求;
+  :开启/加强 gossip 订阅;
+}
+
+partition "从 regular -> catch-up" {
+  if (落后过多?) then (是)
+    :进入 catch-up/range 补齐;
+  else (否)
+    :保持 regular;
+  endif
+}
+
+stop
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml business2_attestation_flow
+title Business 2: Attestation 生成 -> 广播 -> 接收 -> 处理 (Lighthouse)
+
+partition 生成 {
+  :Validator 产出 attestation;
+  :签名并选择 subnet;
+}
+
+partition 广播 {
+  :Gossipsub attestation subnet topic;
+  :SSZ -> Snappy;
+  :publish;
+}
+
+partition 接收 {
+  :decode -> PubsubMessage::{Attestation|AggregateAndProof};
+  :router.handle_gossip 分发;
+}
+
+partition 处理 {
+  :NetworkBeaconProcessor 验证（签名/slot/committee 等）;
+  :写入 attestation pool / fork choice;
+  :回传 Accept/Ignore/Reject;
+}
+
+@enduml

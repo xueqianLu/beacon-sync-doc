@@ -1,0 +1,22 @@
+@startuml business7_real_time_block_receive
+title Business 7: Real-time Block Receive（实时收块）(Lighthouse)
+
+start
+
+partition "Gossip 入站" {
+  :gossipsub message;
+  :decode (SSZ+Snappy);
+}
+
+partition "处理" {
+  :router -> NetworkBeaconProcessor;
+  :验证 -> 导入;
+}
+
+partition "反馈" {
+  :回传 validation result 给 gossipsub;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,17 @@
+@startuml business5_aggregate_broadcast
+title B5 Aggregate Broadcast（聚合广播）(Lighthouse)
+
+start
+
+partition "编码" {
+  :SSZ -> Snappy;
+  :topic = eth2/<fork_digest>/beacon_aggregate_and_proof/ssz_snappy;
+}
+
+partition "发布" {
+  :gossipsub.publish;
+}
+
+stop
+
+@enduml

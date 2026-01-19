@@ -1,0 +1,14 @@
+@startuml business3_payload_building
+title B3 Payload Building（payload 构建）(Lighthouse)
+
+start
+
+partition "提议者侧" {
+  :slot 到达提议时机;
+  :向 Execution Engine 请求构建 payload;
+  :组装到 BeaconBlock;
+}
+
+stop
+
+@enduml

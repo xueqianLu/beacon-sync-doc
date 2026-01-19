@@ -1,0 +1,21 @@
+@startuml business6_startup_detection
+title Business 6: Startup Detection（启动阶段检测）(Lighthouse)
+
+start
+
+partition "启动" {
+  :加载配置/数据库;
+  :启动网络与 beacon processor;
+}
+
+partition "判断" {
+  if (已有足够链数据?) then (是)
+    :可能直接进入 regular sync;
+  else (否)
+    :进入 initial sync / checkpoint sync;
+  endif
+}
+
+stop
+
+@enduml

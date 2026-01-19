@@ -1,0 +1,25 @@
+@startuml business1_block_generation
+title B1 Block Generation（区块生成）(Lighthouse)
+
+start
+
+partition "触发" {
+  :slot tick 到达提议时机;
+  :本地具备 proposer duties;
+}
+
+partition "构建区块" {
+  :收集共识层操作 (attestations/ slashings/ exits...);
+  :向 Execution Engine 请求 payload;
+  :组装 SignedBeaconBlock;
+  :BLS 签名;
+}
+
+partition "产出" {
+  :得到 blockRoot;
+  :准备广播到 P2P;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,21 @@
+@startuml business7_periodic_head_check
+title Business 7: Periodic Head Check（周期性 head 检查）(Lighthouse)
+
+start
+
+partition "定时器" {
+  :每隔 N 秒/slot 触发;
+}
+
+partition "评估" {
+  :比较本地 head slot 与 peers head slot;
+  if (落后阈值?) then (是)
+    :切换到 catch-up;
+  else (否)
+    :保持 regular;
+  endif
+}
+
+stop
+
+@enduml

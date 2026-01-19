@@ -1,0 +1,17 @@
+@startuml business5_aggregate_proof_creation
+title B5 Aggregate Proof Creation（聚合证明创建）(Lighthouse)
+
+start
+
+partition "聚合" {
+  :聚合签名;
+  :生成 AggregateAndProof;
+}
+
+partition "签名" {
+  :对 AggregateAndProof 进行签名;
+}
+
+stop
+
+@enduml

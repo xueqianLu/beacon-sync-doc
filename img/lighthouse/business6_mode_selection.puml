@@ -1,0 +1,21 @@
+@startuml business6_mode_selection
+title Business 6: Mode Selection（同步模式选择）(Lighthouse)
+
+start
+
+partition "输入" {
+  :本地 head slot;
+  :已知网络 head slot（来自 status/peers）;
+}
+
+partition "决策" {
+  if (差距很大?) then (是)
+    :initial sync（range/batch）;
+  else (否)
+    :regular sync（gossip + 小范围 rpc）;
+  endif
+}
+
+stop
+
+@enduml

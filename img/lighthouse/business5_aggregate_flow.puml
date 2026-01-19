@@ -1,0 +1,22 @@
+@startuml business5_aggregate_flow
+title Business 5: 聚合证明（Aggregate）主流程 (Lighthouse)
+
+partition 选择聚合者 {
+  :validator 检查 aggregator duties;
+}
+
+partition 收集 attestations {
+  :从本地 pool 收集同 committee/slot attestations;
+}
+
+partition 生成证明 {
+  :创建 AggregateAndProof;
+  :签名;
+}
+
+partition 广播 {
+  :gossipsub aggregate topic;
+  :网络层 publish;
+}
+
+@enduml

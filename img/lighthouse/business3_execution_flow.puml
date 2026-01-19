@@ -1,0 +1,23 @@
+@startuml business3_execution_flow
+title Business 3: 执行层交易提交 -> 打包 -> 执行/验证 (Lighthouse)
+
+partition 交易提交 {
+  :交易进入 Execution Engine mempool;
+}
+
+partition 打包 {
+  :提议者请求/构建 execution payload;
+  :payload 进入 BeaconBlock.body.execution_payload;
+}
+
+partition 接收与验证 {
+  :接收 BeaconBlock（gossip 或 rpc）;
+  :共识层验证 + 执行 payload 验证（可能异步/可乐观）;
+}
+
+partition 落地 {
+  :写入 DB;
+  :更新 fork choice;
+}
+
+@enduml

@@ -1,0 +1,18 @@
+@startuml business5_attestation_collection
+title B5 Attestation Collection（证明收集）(Lighthouse)
+
+start
+
+partition "来源" {
+  :本地 attestation pool;
+  :gossip 入站 attestations;
+}
+
+partition "筛选" {
+  :按 slot/committee 分组;
+  :去重/选择最高覆盖率的 aggregation bits;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml business1_block_receive
+title B1 Block Receive（区块接收）(Lighthouse)
+
+start
+
+partition "入站 decode" {
+  :gossipsub Event::Message;
+  :SnappyTransform 解压;
+  :PubsubMessage::decode(SSZ);
+  if (decode 失败?) then (是)
+    :report_message_validation_result(Reject);
+    stop
+  endif
+}
+
+partition "路由" {
+  :router.handle_gossip;
+  :send_gossip_beacon_block -> NetworkBeaconProcessor;
+}
+
+stop
+
+@enduml

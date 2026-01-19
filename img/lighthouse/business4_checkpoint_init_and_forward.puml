@@ -1,0 +1,33 @@
+@startuml business4_checkpoint_init_and_forward
+Title Lighthouse Checkpoint Sync / 初始化节点并前向同步（细化）
+
+start
+
+partition "weak subjectivity 初始化" {
+  :BeaconChainBuilder.weak_subjectivity_state(...);
+  :将 checkpoint state/block 写入 DB;
+  :以 anchor 初始化 fork choice;
+  :持久化 weak subjectivity 元数据;
+}
+
+partition "进入前向同步" {
+  :checkpointSlot := state.slot;
+  :从 checkpointSlot+1 开始 RangeSync;
+}
+
+partition "RangeSync 到 head" {
+  :SyncManager 启动 range_sync;
+  :按 batch 请求 BlocksByRange;
+  :处理/导入 blocks，推进 head;
+  :接近 head -> 标记 synced;
+}
+
+partition "进入 Regular Sync" {
+  :NetworkMessage::SubscribeCoreTopics;
+  :订阅 core gossip topics;
+  :gossip 为主，lookup/rpc 为辅;
+}
+
+stop
+
+@enduml

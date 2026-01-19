@@ -1,0 +1,18 @@
+@startuml business5_aggregation_execution
+title B5 Aggregation Execution（聚合执行）(Lighthouse)
+
+start
+
+partition "发送" {
+  :构造 PubsubMessage::AggregateAndProof;
+  :publish 到 aggregate topic;
+}
+
+partition "接收侧" {
+  :验证 selection proof 与签名;
+  :写入 pool / fork choice;
+}
+
+stop
+
+@enduml

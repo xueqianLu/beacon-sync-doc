@@ -1,0 +1,25 @@
+@startuml business3_payload_execution
+title B3 Payload Execution（payload 执行/验证）(Lighthouse)
+
+start
+
+partition "接收块" {
+  :收到带 payload 的 SignedBeaconBlock;
+}
+
+partition "验证" {
+  :共识层状态转换;
+  :Execution Engine 验证 payload（post-merge）;
+}
+
+partition "结果" {
+  if (EL 验证通过?) then (是)
+    :块可 fully-verified;
+  else (否)
+    :可能进入 optimistic/不完全验证状态（实现依赖版本/策略）;
+  endif
+}
+
+stop
+
+@enduml

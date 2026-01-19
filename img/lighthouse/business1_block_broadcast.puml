@@ -1,0 +1,23 @@
+@startuml business1_block_broadcast
+title B1 Block Broadcast（区块广播）(Lighthouse)
+
+start
+
+partition "选择广播路径" {
+  if (节点已接近 head?) then (是)
+    :订阅/维护核心 gossip topics;
+  else (否)
+    :仍在 initial sync，可能延迟完整订阅;
+  endif
+}
+
+partition "Gossip 广播" {
+  :构造 PubsubMessage::BeaconBlock;
+  :topics() 计算 fork digest topic;
+  :publish -> gossipsub.publish;
+  :若 NoPeersSubscribedToTopic 则写入 gossip_cache;
+}
+
+stop
+
+@enduml

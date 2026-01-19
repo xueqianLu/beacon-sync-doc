@@ -20,13 +20,13 @@
 
 ### 支持的客户端
 
-| 客户端 | 语言 | 进度 | 文档入口 |
-|--------|------|------|----------|
-| **[Prysm](./docs/prysm/)** | Go | ✅ 28/45 章 (62.2%) | [查看文档](./docs/prysm/README.md) |
-| **[Teku](./docs/teku/)** | Java | 🚧 准备中 | [查看文档](./docs/teku/README.md) |
-| **Lighthouse** | Rust | 🔜 计划中 | - |
-| **Nimbus** | Nim | 🔜 计划中 | - |
-| **Lodestar** | TypeScript | 🔜 计划中 | - |
+| 客户端                               | 语言       | 进度                | 文档入口                                |
+| ------------------------------------ | ---------- | ------------------- | --------------------------------------- |
+| **[Prysm](./docs/prysm/)**           | Go         | ✅ 28/45 章 (62.2%) | [查看文档](./docs/prysm/README.md)      |
+| **[Teku](./docs/teku/)**             | Java       | ✅ 28/45 章 (62.2%) | [查看文档](./docs/teku/README.md)       |
+| **[Lighthouse](./docs/lighthouse/)** | Rust       | ✅ 10/45 章 (22.2%) | [查看文档](./docs/lighthouse/README.md) |
+| **Nimbus**                           | Nim        | 🔜 计划中           | -                                       |
+| **Lodestar**                         | TypeScript | 🔜 计划中           | -                                       |
 
 ### 📊 客户端对比分析
 
@@ -60,6 +60,7 @@
 <td width="50%">
 
 #### 🟦 [Prysm (Go)](./docs/prysm/)
+
 - ✅ **28/45 章完成** (62.2%)
 - 基础概念 (1-6 章)
 - Req/Resp 协议 (7-10 章)
@@ -74,16 +75,27 @@
 <td width="50%">
 
 #### 🟧 [Teku (Java)](./docs/teku/)
-- 🚧 **准备中**
-- 框架已搭建
-- 代码研究进行中
-- 章节编写待开始
 
-[📖 查看框架](./docs/teku/README.md)
+- ✅ **28/45 章完成** (62.2%)
+- 基础概念、P2P 网络
+- Req/Resp、Gossipsub
+- Initial & Regular Sync
+- 错误处理、性能优化
+
+[📖 开始阅读](./docs/teku/README.md)
 
 </td>
 </tr>
 </table>
+
+#### 🟩 [Lighthouse (Rust)](./docs/lighthouse/)
+
+- ✅ **10/45 章完成** (22.2%)
+- 基础概念、P2P 网络
+- Req/Resp（Status / BlocksByRange / BlocksByRoot）
+- 基于源码版本：`v8.0.1`
+
+[📖 开始阅读](./docs/lighthouse/README.md)
 
 ### 📊 对比分析
 
@@ -135,8 +147,10 @@ bundle exec jekyll serve
 ## 📊 项目统计
 
 ```
-客户端覆盖:   2/5 (Prysm ✅, Teku 🚧)
+客户端覆盖:   3/5 (Prysm ✅, Teku ✅, Lighthouse ✅)
 Prysm 进度:   28/45 章 (62.2%)
+Teku 进度:    28/45 章 (62.2%)
+Lighthouse:   10/45 章 (22.2%)
 总行数:       25,000+ 行
 代码示例:     350+ 段
 流程图:       80+ 个
@@ -148,15 +162,19 @@ Prysm 进度:   28/45 章 (62.2%)
 ## 🛠️ 技术栈
 
 ### 参考实现
+
 - **Prysm**: [github.com/prysmaticlabs/prysm](https://github.com/prysmaticlabs/prysm) (Go)
 - **Teku**: [github.com/Consensys/teku](https://github.com/Consensys/teku) (Java)
+- **Lighthouse**: [github.com/sigp/lighthouse](https://github.com/sigp/lighthouse) (Rust)
 
 ### 协议规范
+
 - **Consensus Specs**: [github.com/ethereum/consensus-specs](https://github.com/ethereum/consensus-specs)
 - **P2P 网络**: [libp2p](https://libp2p.io/)
 - **编码**: SSZ + Snappy
 
 ### 文档工具
+
 - **Jekyll** + **GitHub Pages**
 
 ---
@@ -164,6 +182,7 @@ Prysm 进度:   28/45 章 (62.2%)
 ## 📝 最近更新
 
 ### 2026-01-13
+
 - 🔄 **重大重构**: 转型为多客户端文档中心
 - ✅ Prysm 文档迁移至 `docs/prysm/`
 - ✅ 创建 Teku 文档框架 `docs/teku/`
@@ -171,6 +190,7 @@ Prysm 进度:   28/45 章 (62.2%)
 - ✅ 新增共享通用内容 `shared/`
 
 ### 2026-01-04
+
 - ✅ 新增第 3 章：同步模块与 P2P 的协同设计
 - ✅ 增强第 4 章：添加与同步集成章节
 - ✅ Prysm 第一部分现已 100% 完成
@@ -202,14 +222,18 @@ Prysm 进度:   28/45 章 (62.2%)
 ## 🔗 相关链接
 
 ### 客户端官方资源
+
 - **Prysm**: [docs.prylabs.network](https://docs.prylabs.network/)
 - **Teku**: [docs.teku.consensys.io](https://docs.teku.consensys.io/)
+- **Lighthouse**: [lighthouse-book.sigmaprime.io](https://lighthouse-book.sigmaprime.io/)
 
 ### 协议与规范
+
 - **Consensus Specs**: [github.com/ethereum/consensus-specs](https://github.com/ethereum/consensus-specs)
 - **libp2p**: [docs.libp2p.io](https://docs.libp2p.io/)
 
 ### 本项目
+
 - **在线文档**: [https://xueqianLu.github.io/beacon-sync-doc/](https://xueqianLu.github.io/beacon-sync-doc/)
 - **GitHub 仓库**: [github.com/xueqianLu/beacon-sync-doc](https://github.com/xueqianLu/beacon-sync-doc)
 
@@ -228,4 +252,4 @@ Prysm 进度:   28/45 章 (62.2%)
 
 ---
 
-**最后更新**: 2026-01-13 | **版本**: v2.0 | **状态**: 🟢 持续更新中
+**最后更新**: 2026-01-18 | **版本**: v2.0 | **状态**: 🟢 持续更新中

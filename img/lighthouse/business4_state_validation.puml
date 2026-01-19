@@ -1,0 +1,25 @@
+@startuml business4_state_validation
+title B4 State Validation（状态验证）(Lighthouse)
+
+start
+
+partition "输入" {
+  :checkpoint state + 关联区块/根;
+}
+
+partition "一致性检查" {
+  :state root 对齐;
+  :必要的历史根/最终性一致性;
+}
+
+partition "结果" {
+  if (验证通过?) then (是)
+    :接受 checkpoint;
+  else (否)
+    :拒绝并回退到其他来源/模式;
+  endif
+}
+
+stop
+
+@enduml

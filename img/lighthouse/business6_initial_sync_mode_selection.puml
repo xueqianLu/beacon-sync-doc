@@ -1,0 +1,39 @@
+@startuml business6_initial_sync_mode_selection
+Title Lighthouse Initial Sync / 同步模式判定 (SyncManager) 细化流程
+
+start
+
+partition "输入信号" {
+  :local headSlot := BeaconChain.HeadSlot();
+  :currentSlot := SlotClock.now();
+  :peers head 通过 Status/PeerManager 得到 (peer headSlot/finalized);
+}
+
+partition "判定是否需要 Range Sync" {
+  :slotsBehind := peerHeadSlot - localHeadSlot;
+  if (slotsBehind > SLOT_IMPORT_TOLERANCE) then (需要)
+    :启动/维持 RangeSync;
+  else (不需要)
+    :不启动 RangeSync;
+  endif
+}
+
+partition "判定是否订阅核心 Gossip Topics" {
+  if (currentSlot - localHeadSlot <= SLOT_IMPORT_TOLERANCE) then (接近 head)
+    :发送 NetworkMessage::SubscribeCoreTopics;
+    :订阅 core_topics_to_subscribe(fork_digest, cfg);
+  else (仍落后)
+    :保持较保守订阅集合;
+  endif
+}
+
+partition "兜底：Lookup/Backfill" {
+  :收到 UnknownParentBlock/UnknownRoot 事件时触发 BlockLookups;
+  if (从 checkpoint 启动且需要完整历史?) then (是)
+    :启动 BackfillSync;
+  endif
+}
+
+stop
+
+@enduml

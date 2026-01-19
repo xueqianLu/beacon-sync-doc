@@ -1,0 +1,23 @@
+@startuml business6_peer_connection
+title Business 6: Peer Connection（对等连接）(Lighthouse)
+
+start
+
+partition "发现" {
+  :discv5 / bootnodes / ENR;
+  :建立 peer candidates;
+}
+
+partition "连接" {
+  :libp2p transport 建连;
+  :协议协商（identify/metadata/status 等）;
+}
+
+partition "健康度" {
+  :peer scoring / pruning;
+  :为 sync 选择合适 peers;
+}
+
+stop
+
+@enduml

@@ -1,0 +1,24 @@
+@startuml business4_backfill
+title B4 Backfill（历史回填）(Lighthouse)
+
+start
+
+partition "触发" {
+  :forward sync 进入稳定状态;
+  :需要补齐历史 blocks/state（归档/索引/服务需求）;
+}
+
+partition "策略" {
+  :从 checkpoint 向后迭代;
+  :优先使用 BlocksByRoot（已知父根）;
+  :必要时退化为 BlocksByRange;
+}
+
+partition "导入" {
+  :验证并写入数据库;
+  :更新索引/可用性;
+}
+
+stop
+
+@enduml

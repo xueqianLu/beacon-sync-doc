@@ -1,0 +1,54 @@
+@startuml business7_regular_sync_flow
+Title Lighthouse Regular Sync 业务主线: 订阅核心 Gossip -> 处理新区块/证明 -> 缺失块 Lookup -> 必要时退化 RangeSync
+
+start
+
+partition "订阅核心 Gossip Topics" {
+  :NetworkService 收到 SubscribeCoreTopics;
+  :调用 core_topics_to_subscribe() 计算 topics;
+  :向 libp2p gossipsub 执行 subscribe;
+}
+
+partition "接收 Gossip 消息" {
+  :lighthouse_network 收到 gossipsub Event::Message;
+  :decode -> PubsubMessage (SSZ + Snappy);
+  if (decode 失败) then (Reject)
+    :立即 report_message_validation_result(Reject);
+    stop
+  endif
+  :上抛 NetworkEvent::PubsubMessage;
+}
+
+partition "Router 分发" {
+  :Router.handle_gossip(pubsub_message);
+  :按类型分发到 NetworkBeaconProcessor:
+  - send_gossip_beacon_block
+  - send_gossip_attestation/aggregate...
+}
+
+partition "NetworkBeaconProcessor 验证/导入" {
+  :执行 gossip 验证与导入;
+  if (需要缺失块?) then (是)
+    :发送 SyncMessage::UnknownParentBlock
+     或 UnknownBlockHashFromAttestation;
+  endif
+  :生成 MessageAcceptance:
+  - Accept/Ignore/Reject;
+  :通过 NetworkMessage::ValidationResult 回传;
+}
+
+partition "验证结果回传 gossipsub" {
+  :NetworkService 收到 ValidationResult;
+  :调用 libp2p.report_message_validation_result();
+  :最终 gossipsub 决定是否传播;
+}
+
+partition "落后检测与退化" {
+  if (持续落后 peer head?) then (是)
+    :触发/恢复 RangeSync (BlocksByRange);
+  endif
+}
+
+stop
+
+@enduml

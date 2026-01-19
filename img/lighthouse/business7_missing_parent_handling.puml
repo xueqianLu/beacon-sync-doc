@@ -1,0 +1,26 @@
+@startuml business7_missing_parent_handling
+title Business 7: Missing Parent Handling（缺失父块处理）(Lighthouse)
+
+start
+
+partition "发现" {
+  :接收 block，但 parent unknown;
+  :beacon processor 标记 UnknownParent;
+}
+
+partition "Lookup" {
+  :BlockLookups 记录待补齐根;
+  :BlocksByRoot 递归请求父链;
+  if (超时/次数过多?) then (是)
+    :退化为 BlocksByRange catch-up;
+  endif
+}
+
+partition "收敛" {
+  :父块到齐后重新导入子块;
+  :更新 fork choice;
+}
+
+stop
+
+@enduml

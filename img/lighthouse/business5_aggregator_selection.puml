@@ -1,0 +1,21 @@
+@startuml business5_aggregator_selection
+title B5 Aggregator Selection（聚合者选择）(Lighthouse)
+
+start
+
+partition "触发" {
+  :slot tick;
+  :duties 提供 committee + selection proof 逻辑;
+}
+
+partition "选择" {
+  if (满足 selection 条件?) then (是)
+    :成为 aggregator;
+  else (否)
+    :仅发送普通 attestation;
+  endif
+}
+
+stop
+
+@enduml

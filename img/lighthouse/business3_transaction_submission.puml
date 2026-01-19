@@ -1,0 +1,13 @@
+@startuml business3_transaction_submission
+title B3 Transaction Submission（交易提交）(Lighthouse)
+
+start
+
+partition "外部提交" {
+  :交易通过 JSON-RPC 提交到 Execution Engine;
+  :进入 mempool;
+}
+
+stop
+
+@enduml

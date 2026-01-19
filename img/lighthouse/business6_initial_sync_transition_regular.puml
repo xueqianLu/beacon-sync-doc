@@ -1,0 +1,32 @@
+@startuml business6_initial_sync_transition_regular
+Title Lighthouse Initial Sync / 切换到 Regular Sync 细化流程
+
+start
+
+partition "持续监控" {
+  :SyncManager 周期性评估:
+  - currentSlot
+  - localHeadSlot
+  - peers headSlot;
+}
+
+partition "接近 head 判定" {
+  if (currentSlot - localHeadSlot <= SLOT_IMPORT_TOLERANCE) then (接近)
+    :标记 synced;
+    :发送 NetworkMessage::SubscribeCoreTopics;
+    :从此以 gossip 为主、req/resp 为辅;
+  else (不接近)
+    :继续 RangeSync / Backfill / Lookup;
+  endif
+}
+
+partition "Regular Sync 接管" {
+  :订阅核心 topics 后:
+  - beacon_block/aggregate/attestation subnets...
+  :Router.handle_gossip -> NetworkBeaconProcessor 处理;
+  :缺失父块/未知 root 触发 BlockLookups;
+}
+
+stop
+
+@enduml
