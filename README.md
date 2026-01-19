@@ -24,7 +24,7 @@
 | ------------------------------------ | ---------- | ------------------- | --------------------------------------- |
 | **[Prysm](./docs/prysm/)**           | Go         | ✅ 28/45 章 (62.2%) | [查看文档](./docs/prysm/README.md)      |
 | **[Teku](./docs/teku/)**             | Java       | ✅ 28/45 章 (62.2%) | [查看文档](./docs/teku/README.md)       |
-| **[Lighthouse](./docs/lighthouse/)** | Rust       | ✅ 10/45 章 (22.2%) | [查看文档](./docs/lighthouse/README.md) |
+| **[Lighthouse](./docs/lighthouse/)** | Rust       | ✅ 28/45 章 (62.2%) | [查看文档](./docs/lighthouse/README.md) |
 | **Nimbus**                           | Nim        | 🔜 计划中           | -                                       |
 | **Lodestar**                         | TypeScript | 🔜 计划中           | -                                       |
 
@@ -90,7 +90,7 @@
 
 #### 🟩 [Lighthouse (Rust)](./docs/lighthouse/)
 
-- ✅ **10/45 章完成** (22.2%)
+- ✅ **28/45 章完成** (62.2%)
 - 基础概念、P2P 网络
 - Req/Resp（Status / BlocksByRange / BlocksByRoot）
 - 基于源码版本：`v8.0.1`
@@ -150,7 +150,7 @@ bundle exec jekyll serve
 客户端覆盖:   3/5 (Prysm ✅, Teku ✅, Lighthouse ✅)
 Prysm 进度:   28/45 章 (62.2%)
 Teku 进度:    28/45 章 (62.2%)
-Lighthouse:   10/45 章 (22.2%)
+Lighthouse:   28/45 章 (62.2%)
 总行数:       25,000+ 行
 代码示例:     350+ 段
 流程图:       80+ 个
