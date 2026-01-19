@@ -113,7 +113,7 @@ prysm/beacon-chain/
 │   ├── process_attestation.go  # 证明处理
 │   └── forkchoice/        # Fork选择实现
 │
-├── sync/                   # 🎯 同步模块（本书重点）
+├── sync/                   # 同步模块（本书重点）
 │   ├── service.go         # 同步服务主入口
 │   ├── initial-sync/      # 初始同步
 │   ├── rpc_*.go          # Req/Resp协议实现
@@ -566,10 +566,10 @@ type config struct {
 
 本章详细介绍了 Beacon 节点的架构：
 
-✅ **节点职责**: 维护状态、处理区块、参与网络、提供服务
-✅ **组件架构**: 分层设计，职责清晰，模块化
-✅ **同步位置**: 作为数据获取引擎，连接 P2P 和 Blockchain
-✅ **模块交互**:
+- **节点职责**: 维护状态、处理区块、参与网络、提供服务
+- **组件架构**: 分层设计，职责清晰，模块化
+- **同步位置**: 作为数据获取引擎，连接 P2P 和 Blockchain
+- **模块交互**:
 
 - Blockchain Service: 区块处理和 fork choice
 - P2P Layer: Gossipsub 和 Req/Resp 通信

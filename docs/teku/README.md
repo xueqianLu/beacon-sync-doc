@@ -6,18 +6,18 @@
 
 ---
 
-## 📖 关于 Teku
+## 关于 Teku
 
 **Teku** 是由 Consensys 开发的以太坊共识层客户端，使用 **Java 语言**实现。
 
-- 🔗 **官方仓库**: [github.com/Consensys/teku](https://github.com/Consensys/teku)
-- 📚 **官方文档**: [docs.teku.consensys.io](https://docs.teku.consensys.io/)
-- 🏷️ **版本**: v24.12.0+
-- 💻 **语言**: Java 21+
+- **官方仓库**: [github.com/Consensys/teku](https://github.com/Consensys/teku)
+- **官方文档**: [docs.teku.consensys.io](https://docs.teku.consensys.io/)
+- **版本**: v24.12.0+
+- **语言**: Java 21+
 
 ---
 
-## 📚 文档目录
+## 文档目录
 
 查看 [outline.md](./outline.md) 获取完整章节列表（28/45 章已完成）
 
@@ -44,13 +44,13 @@
 
 ---
 
-## 🔍 代码参考
+## 代码参考
 
 查看对应章节内的“代码参考/关键类”段落，以及对比分析目录 [../../comparison/](../../comparison/)。
 
 ---
 
-## 🚀 快速导航
+## 快速导航
 
 - **返回总览**: [../../README.md](../../README.md)
 - **与 Prysm 对比**: [../../comparison/](../../comparison/)

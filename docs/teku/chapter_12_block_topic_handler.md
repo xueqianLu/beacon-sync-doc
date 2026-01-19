@@ -11,19 +11,19 @@
 ```java
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-public class BeaconBlockTopicHandler 
+public class BeaconBlockTopicHandler
     implements Eth2TopicHandler<SignedBeaconBlock> {
-  
+
   private final RecentChainData recentChainData;
   private final BlockValidator blockValidator;
   private final GossipedBlockProcessor processor;
-  
+
   @Override
   public SafeFuture<ValidationResult> handleMessage(
       Eth2PreparedGossipMessage message) {
-    
+
     SignedBeaconBlock block = message.getMessage();
-    
+
     // 1. 预验证
     return SafeFuture.of(() -> preValidate(block))
       .thenCompose(result -> {
@@ -42,7 +42,7 @@ public class BeaconBlockTopicHandler
         return SafeFuture.completedFuture(result);
       });
   }
-  
+
   private ValidationResult preValidate(SignedBeaconBlock block) {
     // Slot 检查
     if (!isValidSlot(block)) {
@@ -54,17 +54,17 @@ public class BeaconBlockTopicHandler
     }
     return ValidationResult.ACCEPT;
   }
-  
+
   private boolean isValidSlot(SignedBeaconBlock block) {
     UInt64 currentSlot = recentChainData.getCurrentSlot();
     UInt64 blockSlot = block.getSlot();
-    
+
     // 不在未来
     UInt64 maxSlot = currentSlot.plus(CLOCK_DISPARITY_SLOTS);
     if (blockSlot.isGreaterThan(maxSlot)) {
       return false;
     }
-    
+
     // 不太旧 (1 epoch)
     UInt64 minSlot = currentSlot.minusMinZero(SLOTS_PER_EPOCH);
     return blockSlot.isGreaterThanOrEqualTo(minSlot);
@@ -82,43 +82,43 @@ public class BeaconBlockTopicHandler
 public class BlockValidator {
   private final Spec spec;
   private final RecentChainData chainData;
-  
+
   public SafeFuture<ValidationResult> validate(
       SignedBeaconBlock block) {
-    
+
     return validateStructure(block)
-      .thenCompose(r -> r == ValidationResult.ACCEPT 
+      .thenCompose(r -> r == ValidationResult.ACCEPT
         ? validateSignature(block) : SafeFuture.completedFuture(r))
-      .thenCompose(r -> r == ValidationResult.ACCEPT 
+      .thenCompose(r -> r == ValidationResult.ACCEPT
         ? validateParent(block) : SafeFuture.completedFuture(r))
-      .thenCompose(r -> r == ValidationResult.ACCEPT 
+      .thenCompose(r -> r == ValidationResult.ACCEPT
         ? validateContent(block) : SafeFuture.completedFuture(r));
   }
-  
+
   private SafeFuture<ValidationResult> validateSignature(
       SignedBeaconBlock block) {
-    
+
     BeaconState state = chainData.getHeadState();
     Validator proposer = state.getValidators()
       .get(block.getMessage().getProposerIndex().intValue());
-    
+
     BLSPublicKey pubkey = proposer.getPubkey();
-    Bytes32 domain = spec.getDomain(state, Domain.BEACON_PROPOSER, 
+    Bytes32 domain = spec.getDomain(state, Domain.BEACON_PROPOSER,
       spec.computeEpochAtSlot(block.getSlot()));
-    
+
     Bytes signingRoot = spec.computeSigningRoot(
       block.getMessage(), domain);
-    
-    boolean valid = BLS.verify(pubkey, signingRoot, 
+
+    boolean valid = BLS.verify(pubkey, signingRoot,
       block.getSignature());
-    
+
     return SafeFuture.completedFuture(
       valid ? ValidationResult.ACCEPT : ValidationResult.REJECT);
   }
-  
+
   private SafeFuture<ValidationResult> validateParent(
       SignedBeaconBlock block) {
-    
+
     if (!chainData.containsBlock(block.getParentRoot())) {
       return SafeFuture.completedFuture(
         ValidationResult.SAVE_FOR_FUTURE);
@@ -141,12 +141,12 @@ public enum ValidationResult {
 }
 ```
 
-| 结果 | 操作 | Peer评分 | 传播 |
-|------|------|----------|------|
-| ACCEPT | 导入 | +1 | ✅ |
-| IGNORE | 丢弃 | 0 | ❌ |
-| REJECT | 拒绝 | -10 | ❌ |
-| SAVE_FOR_FUTURE | 队列 | 0 | ❌ |
+| 结果            | 操作 | Peer 评分 | 传播 |
+| --------------- | ---- | --------- | ---- |
+| ACCEPT          | 导入 | +1        | 是   |
+| IGNORE          | 丢弃 | 0         | 否   |
+| REJECT          | 拒绝 | -10       | 否   |
+| SAVE_FOR_FUTURE | 队列 | 0         | 否   |
 
 ---
 
@@ -175,35 +175,35 @@ Import Block → SUCCESS
 ```java
 public class BatchBlockValidator {
   private static final int BATCH_SIZE = 64;
-  private final Queue<SignedBeaconBlock> pending = 
+  private final Queue<SignedBeaconBlock> pending =
     new ConcurrentLinkedQueue<>();
-  
+
   public void processBatch() {
     List<SignedBeaconBlock> batch = new ArrayList<>();
     pending.drainTo(batch, BATCH_SIZE);
-    
+
     if (!batch.isEmpty()) {
       batchVerifySignatures(batch);
     }
   }
-  
+
   private void batchVerifySignatures(
       List<SignedBeaconBlock> blocks) {
-    
+
     List<BLSPublicKey> pubkeys = blocks.stream()
       .map(this::getProposerPubkey)
       .collect(Collectors.toList());
-    
+
     List<Bytes> messages = blocks.stream()
       .map(this::computeSigningRoot)
       .collect(Collectors.toList());
-    
+
     List<BLSSignature> sigs = blocks.stream()
       .map(SignedBeaconBlock::getSignature)
       .collect(Collectors.toList());
-    
+
     boolean allValid = BLS.batchVerify(pubkeys, messages, sigs);
-    
+
     if (allValid) {
       blocks.forEach(this::acceptBlock);
     } else {
@@ -217,44 +217,47 @@ public class BatchBlockValidator {
 
 ## 12.6 与 Prysm 对比
 
-| 维度 | Prysm | Teku |
-|------|-------|------|
-| Handler | beaconBlockSubscriber | BeaconBlockTopicHandler |
-| 验证器 | validateBeaconBlockPubSub | BlockValidator |
-| 异步 | Goroutines | SafeFuture |
-| 事件 | Channel | EventBus |
+| 维度    | Prysm                     | Teku                    |
+| ------- | ------------------------- | ----------------------- |
+| Handler | beaconBlockSubscriber     | BeaconBlockTopicHandler |
+| 验证器  | validateBeaconBlockPubSub | BlockValidator          |
+| 异步    | Goroutines                | SafeFuture              |
+| 事件    | Channel                   | EventBus                |
 
 **Prysm 代码**:
+
 ```go
 func (s *Service) validateBeaconBlockPubSub(
     msg *pubsub.Message) pubsub.ValidationResult {
-  
+
   block := decode(msg.Data)
-  
+
   if !isValidSlot(block) {
     return pubsub.ValidationIgnore
   }
-  
+
   if !verifySignature(block) {
     return pubsub.ValidationReject
   }
-  
+
   if err := s.chain.ReceiveBlock(block); err != nil {
     return pubsub.ValidationIgnore
   }
-  
+
   return pubsub.ValidationAccept
 }
 ```
 
 **Teku 优势**:
-- ✅ 类型安全 Future 链
-- ✅ 细粒度验证步骤
-- ✅ EventBus 解耦
+
+- 类型安全 Future 链
+- 细粒度验证步骤
+- EventBus 解耦
 
 **Prysm 优势**:
-- ✅ 代码简洁
-- ✅ 同步易调试
+
+- 代码简洁
+- 同步易调试
 
 ---
 
@@ -289,7 +292,7 @@ Histogram validationDuration = Histogram.build()
 ```java
 public SafeFuture<ValidationResult> validateWithFallback(
     SignedBeaconBlock block) {
-  
+
   return validator.validate(block)
     .exceptionallyCompose(error -> {
       if (error instanceof TimeoutException) {
@@ -310,17 +313,19 @@ public SafeFuture<ValidationResult> validateWithFallback(
 ## 12.9 总结
 
 **核心职责**:
-1. ✅ 预验证（快速过滤）
-2. ✅ 签名验证（安全性）
-3. ✅ 内容验证（完整性）
-4. ✅ 区块导入（持久化）
-5. ✅ 结果传播（网络）
+
+1. 预验证（快速过滤）
+2. 签名验证（安全性）
+3. 内容验证（完整性）
+4. 区块导入（持久化）
+5. 结果传播（网络）
 
 **Teku 特点**:
-- 🎯 类型安全
-- 🎯 异步流水线
-- 🎯 清晰分层
-- 🎯 事件驱动
+
+- 类型安全
+- 异步流水线
+- 清晰分层
+- 事件驱动
 
 ---
 

@@ -6,34 +6,34 @@
 
 ---
 
-## 📊 当前状态分析
+## 当前状态分析
 
 ### 已完成章节 (10/45, 22.2%)
 
-| 章节 | 标题 | 行数 | 大小 | 状态 |
-|------|------|------|------|------|
-| 1-6章 | 基础+P2P | ~3000 | ~100KB | ✅ 完成 |
-| 7-10章 | Req/Resp | ~1400 | ~35KB | ✅ 完成 |
-| 11章 | Gossipsub概述 | 379 | 9KB | ✅ 完成 |
-| **12章** | **Block Handler** | **0** | **0** | ❌ **已删除待重建** |
-| **13章** | **主题订阅** | **56** | **1.5KB** | ⚠️ **需扩充** |
-| **14章** | **消息验证** | **65** | **1.8KB** | ⚠️ **需扩充** |
-| **15章** | **Peer评分** | **41** | **0.9KB** | ⚠️ **需扩充** |
-| **16章** | **性能优化** | **44** | **0.9KB** | ⚠️ **需扩充** |
-| 17章 | Initial Sync概述 | 288 | 7KB | ✅ 完成 |
-| **18章** | **Full Sync** | **42** | **0.9KB** | ⚠️ **需扩充** |
-| **19章** | **Checkpoint Sync** | **43** | **0.9KB** | ⚠️ **需扩充** |
-| **20章** | **Optimistic Sync** | **缺失** | **0** | ❌ **需创建** |
+| 章节      | 标题                | 行数     | 大小      | 状态             |
+| --------- | ------------------- | -------- | --------- | ---------------- |
+| 1-6 章    | 基础+P2P            | ~3000    | ~100KB    | 完成             |
+| 7-10 章   | Req/Resp            | ~1400    | ~35KB     | 完成             |
+| 11 章     | Gossipsub 概述      | 379      | 9KB       | 完成             |
+| **12 章** | **Block Handler**   | **0**    | **0**     | 已删除（待重建） |
+| **13 章** | **主题订阅**        | **56**   | **1.5KB** | 待扩充           |
+| **14 章** | **消息验证**        | **65**   | **1.8KB** | 待扩充           |
+| **15 章** | **Peer 评分**       | **41**   | **0.9KB** | 待扩充           |
+| **16 章** | **性能优化**        | **44**   | **0.9KB** | 待扩充           |
+| 17 章     | Initial Sync 概述   | 288      | 7KB       | 完成             |
+| **18 章** | **Full Sync**       | **42**   | **0.9KB** | 待扩充           |
+| **19 章** | **Checkpoint Sync** | **43**   | **0.9KB** | 待扩充           |
+| **20 章** | **Optimistic Sync** | **缺失** | **0**     | 待创建           |
 
 ### 问题总结
 
-✅ **良好基础** (1-11章): 约 5000 行，结构完整  
-⚠️ **待扩充** (12-19章): 内容过于简略，需补充代码和详细说明  
-❌ **缺失** (20章): 尚未创建
+- **良好基础**（1-11 章）：约 5000 行，结构完整
+- **待扩充**（12-19 章）：内容偏简略，需要补充代码、流程与对比说明
+- **缺失**（20 章）：尚未创建
 
 ---
 
-## 🎯 Phase 4 目标
+## Phase 4 目标
 
 ### 主要目标
 
@@ -45,17 +45,18 @@
 ### 质量标准
 
 每章应包含:
-- ✅ 完整的类定义和接口
-- ✅ 详细的代码实现示例
-- ✅ 与 Prysm 的对比分析
-- ✅ 流程图和架构图
-- ✅ 性能优化建议
-- ✅ 监控指标示例
-- ✅ 错误处理和降级策略
+
+- 完整的类定义和接口
+- 详细的代码实现示例
+- 与 Prysm 的对比分析
+- 流程图和架构图
+- 性能优化建议
+- 监控指标示例
+- 错误处理和降级策略
 
 ---
 
-## 📋 执行清单
+## 执行清单
 
 ### 第一步：Gossipsub 完善 (2 小时)
 
@@ -63,6 +64,7 @@
 
 **目标行数**: 400+  
 **核心内容**:
+
 - [ ] BeaconBlockTopicHandler 完整实现
 - [ ] BlockValidator 详细代码
 - [ ] GossipedBlockProcessor 流程
@@ -75,6 +77,7 @@
 - [ ] 错误处理示例
 
 **参考代码**:
+
 ```
 tech.pegasys.teku.networking.eth2.gossip.topics.BeaconBlockTopicHandler
 tech.pegasys.teku.spec.logic.common.block.BlockValidator
@@ -84,6 +87,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 #### 2. 第 13 章: Gossip 主题订阅 (扩充至 150+ 行)
 
 **需补充**:
+
 - [ ] TopicSubscriber 接口
 - [ ] ForkDigestTopicManager 实现
 - [ ] 动态订阅管理
@@ -96,6 +100,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 #### 3. 第 14 章: 消息验证流程 (扩充至 150+ 行)
 
 **需补充**:
+
 - [ ] Eth2PreparedGossipMessage 结构
 - [ ] MessageValidator 接口
 - [ ] 验证管道设计
@@ -108,6 +113,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 #### 4. 第 15 章: Peer 评分系统 (扩充至 150+ 行)
 
 **需补充**:
+
 - [ ] GossipScoringConfig 配置
 - [ ] PeerScore 计算算法
 - [ ] 主题级别评分
@@ -121,6 +127,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 #### 5. 第 16 章: 性能优化实践 (扩充至 150+ 行)
 
 **需补充**:
+
 - [ ] 消息去重策略
 - [ ] 订阅缓存优化
 - [ ] 批量处理技术
@@ -138,6 +145,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 #### 6. 第 18 章: Full Sync 实现 (扩充至 200+ 行)
 
 **需补充**:
+
 - [ ] ForwardSyncService 核心类
 - [ ] BatchSync 批量同步
 - [ ] 批量大小计算
@@ -152,6 +160,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 #### 7. 第 19 章: Checkpoint Sync (扩充至 200+ 行)
 
 **需补充**:
+
 - [ ] CheckpointSyncService 实现
 - [ ] Weak Subjectivity Checkpoint
 - [ ] State 下载流程
@@ -165,6 +174,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 #### 8. 第 20 章: Optimistic Sync (新建 200+ 行)
 
 **需创建**:
+
 - [ ] OptimisticSync 概念
 - [ ] ExecutionEngineClient 集成
 - [ ] Optimistic block 处理
@@ -178,7 +188,7 @@ tech.pegasys.teku.beacon.sync.gossip.GossipedBlockProcessor
 
 ---
 
-## 📈 预期成果
+## 预期成果
 
 ### 文档统计
 
@@ -195,15 +205,15 @@ Teku 整体大小:   ~215KB
 
 ### 质量指标
 
-- ✅ 代码完整性: 90%+
-- ✅ 流程图覆盖: 80%+
-- ✅ Prysm 对比: 100%
-- ✅ 性能优化建议: 100%
-- ✅ 监控指标: 80%+
+- 代码完整性: 90%+
+- 流程图覆盖: 80%+
+- Prysm 对比: 100%
+- 性能优化建议: 100%
+- 监控指标: 80%+
 
 ---
 
-## 🚀 执行策略
+## 执行策略
 
 ### 高效编写技巧
 
@@ -215,19 +225,19 @@ Teku 整体大小:   ~215KB
 
 ### 时间分配
 
-| 阶段 | 任务 | 预计时间 |
-|------|------|----------|
-| 准备 | 代码参考收集 | 15 分钟 |
-| 编写 | 第 12 章 (重建) | 45 分钟 |
-| 编写 | 第 13-16 章 (扩充) | 1 小时 |
-| 编写 | 第 18-20 章 (扩充+新建) | 1.5 小时 |
-| 校对 | 检查格式和链接 | 20 分钟 |
-| 提交 | Git commit + 更新进度文档 | 10 分钟 |
-| **总计** | | **~4 小时** |
+| 阶段     | 任务                      | 预计时间    |
+| -------- | ------------------------- | ----------- |
+| 准备     | 代码参考收集              | 15 分钟     |
+| 编写     | 第 12 章 (重建)           | 45 分钟     |
+| 编写     | 第 13-16 章 (扩充)        | 1 小时      |
+| 编写     | 第 18-20 章 (扩充+新建)   | 1.5 小时    |
+| 校对     | 检查格式和链接            | 20 分钟     |
+| 提交     | Git commit + 更新进度文档 | 10 分钟     |
+| **总计** |                           | **~4 小时** |
 
 ---
 
-## 📝 提交计划
+## 提交计划
 
 ### Git Commit 策略
 
@@ -255,21 +265,21 @@ git commit -m "Phase 4: Update progress documentation"
 
 ---
 
-## 🎯 成功标准
+## 成功标准
 
 ### 完成条件
 
-- ✅ 所有 9 章内容充实（平均 200+ 行）
-- ✅ 每章包含完整代码示例
-- ✅ 每章包含与 Prysm 对比
-- ✅ 流程图清晰易懂
-- ✅ 本地 Jekyll 预览正常
-- ✅ 所有链接有效
-- ✅ 格式统一规范
+- 所有 9 章内容充实（平均 200+ 行）
+- 每章包含完整代码示例
+- 每章包含与 Prysm 对比
+- 流程图清晰易懂
+- 本地 Jekyll 预览正常
+- 所有链接有效
+- 格式统一规范
 
 ### 验收检查
 
-```bash
+````bash
 # 1. 检查章节行数
 wc -l docs/teku/chapter_{12..20}.md
 
@@ -284,11 +294,11 @@ bundle exec jekyll serve --livereload
 
 # 5. 检查链接
 find docs/teku -name "*.md" | xargs grep -o '\[.*\](.*)'
-```
+````
 
 ---
 
-## 📚 参考资源
+## 参考资源
 
 ### Teku 源代码路径
 
@@ -297,24 +307,24 @@ teku/
 ├── networking/eth2/src/main/java/tech/pegasys/teku/networking/eth2/
 │   ├── gossip/
 │   │   ├── topics/
-│   │   │   ├── BeaconBlockTopicHandler.java ⭐
+│   │   │   ├── BeaconBlockTopicHandler.java
 │   │   │   ├── topichandlers/
 │   │   ├── subnets/
 │   │   ├── BlockGossipManager.java
 │   ├── rpc/
 │   └── peers/
-│       └── PeerScorer.java ⭐
+│       └── PeerScorer.java
 ├── beacon/sync/src/main/java/tech/pegasys/teku/beacon/sync/
-│   ├── forward/ ⭐
+│   ├── forward/
 │   │   ├── ForwardSyncService.java
 │   │   ├── singlepeer/SinglePeerSyncService.java
 │   ├── gossip/
-│   │   └── GossipedBlockProcessor.java ⭐
+│   │   └── GossipedBlockProcessor.java
 │   └── fetch/
 │       └── FetchTaskFactory.java
 └── spec/src/main/java/tech/pegasys/teku/spec/logic/
     └── common/block/
-        └── BlockValidator.java ⭐
+        └── BlockValidator.java
 ```
 
 ### Prysm 对应章节
@@ -331,7 +341,7 @@ teku/
 
 ---
 
-## 🔧 工具和环境
+## 工具和环境
 
 ### 开发环境
 
@@ -355,7 +365,7 @@ open http://localhost:4001/beacon-sync-doc/
 
 ---
 
-## 💡 注意事项
+## 注意事项
 
 ### 质量要求
 
@@ -366,14 +376,16 @@ open http://localhost:4001/beacon-sync-doc/
 
 ### 常见陷阱
 
-❌ **避免**:
+**避免**:
+
 - 复制粘贴 Prysm Go 代码而不转换为 Java
 - 过于简略的代码片段
 - 缺少错误处理示例
 - 流程图与代码不一致
 - 忽略性能优化建议
 
-✅ **推荐**:
+**推荐**:
+
 - 完整的类定义和接口
 - 详细的注释说明
 - 真实的 Teku 代码结构
@@ -382,16 +394,16 @@ open http://localhost:4001/beacon-sync-doc/
 
 ---
 
-## 📅 里程碑
+## 里程碑
 
-- 🎯 **里程碑 1** (1.5 小时后): 完成第 12-14 章
-- 🎯 **里程碑 2** (2.5 小时后): 完成第 15-16 章
-- 🎯 **里程碑 3** (3.5 小时后): 完成第 18-20 章
-- 🎯 **里程碑 4** (4 小时后): 完成校对和提交
+- **里程碑 1**（1.5 小时后）：完成第 12-14 章
+- **里程碑 2**（2.5 小时后）：完成第 15-16 章
+- **里程碑 3**（3.5 小时后）：完成第 18-20 章
+- **里程碑 4**（4 小时后）：完成校对与提交
 
 ---
 
-## 🎉 完成后续
+## 完成后续
 
 ### 后续计划
 
@@ -409,4 +421,4 @@ open http://localhost:4001/beacon-sync-doc/
 
 ---
 
-**准备好了吗？让我们开始 Phase 4！** 🚀
+执行入口：从第 12 章开始重建，其次按 13→16→18→20 的顺序补齐内容。

@@ -11,10 +11,10 @@ Teku 支持三种初始同步模式：
 ```
 1. Forward Sync（标准同步）
    Genesis → Current Head
-   
+
 2. Checkpoint Sync（检查点同步）
    Checkpoint → Current Head (快速)
-   
+
 3. Optimistic Sync（乐观同步）
    CL Head → EL Sync (并行)
 ```
@@ -31,7 +31,7 @@ public class DefaultSyncService implements SyncService {
   private final HistoricalBatchFetcher historicalBatchFetcher;
   private final FetchRecentBlocksService recentBlockFetcher;
   private final SyncStateTracker syncStateTracker;
-  
+
   @Override
   public SafeFuture<Void> start() {
     return SafeFuture.allOf(
@@ -42,7 +42,7 @@ public class DefaultSyncService implements SyncService {
       LOG.info("Sync service started");
     });
   }
-  
+
   @Override
   public boolean isSyncActive() {
     return syncStateTracker.isSyncing();
@@ -81,11 +81,11 @@ public class ForwardSyncService {
   private final BlockManager blockManager;
   private final SyncTargetSelector targetSelector;
   private final AsyncRunner asyncRunner;
-  
+
   public SafeFuture<Void> sync(UInt64 startSlot, UInt64 targetSlot) {
     return SafeFuture.of(() -> {
       SyncTarget target = targetSelector.selectBestTarget();
-      
+
       return syncToTarget(startSlot, targetSlot, target);
     }).thenCompose(result -> {
       if (!isComplete(result)) {
@@ -95,29 +95,29 @@ public class ForwardSyncService {
       return SafeFuture.COMPLETE;
     });
   }
-  
+
   private SafeFuture<SyncResult> syncToTarget(
       UInt64 startSlot,
       UInt64 targetSlot,
       SyncTarget target) {
-    
+
     UInt64 batchSize = UInt64.valueOf(50);
     List<SafeFuture<Void>> batchFutures = new ArrayList<>();
-    
+
     UInt64 currentSlot = startSlot;
     while (currentSlot.isLessThan(targetSlot)) {
       UInt64 endSlot = currentSlot.plus(batchSize).min(targetSlot);
-      
+
       SafeFuture<Void> batchFuture = fetchAndImportBatch(
         target.getPeer(),
         currentSlot,
         endSlot
       );
-      
+
       batchFutures.add(batchFuture);
       currentSlot = endSlot;
     }
-    
+
     return SafeFuture.allOf(batchFutures.toArray(new SafeFuture[0]))
       .thenApply(__ -> new SyncResult(targetSlot, true));
   }
@@ -129,10 +129,10 @@ public class ForwardSyncService {
 ```java
 public class ParallelBatchProcessor {
   private static final int MAX_PARALLEL_BATCHES = 5;
-  
+
   public SafeFuture<Void> processBatches(List<BatchRequest> batches) {
     Semaphore semaphore = new Semaphore(MAX_PARALLEL_BATCHES);
-    
+
     List<SafeFuture<Void>> futures = batches.stream()
       .map(batch -> {
         return SafeFuture.of(() -> {
@@ -143,7 +143,7 @@ public class ParallelBatchProcessor {
         });
       })
       .collect(Collectors.toList());
-    
+
     return SafeFuture.allOf(futures.toArray(new SafeFuture[0]));
   }
 }
@@ -168,7 +168,7 @@ initial-state: "https://checkpoint-sync.example.com/eth/v2/debug/beacon/states/f
 ```java
 public class CheckpointSyncService {
   private final StateDownloader stateDownloader;
-  
+
   public SafeFuture<BeaconState> syncFromCheckpoint(URI checkpointUrl) {
     return stateDownloader.downloadState(checkpointUrl)
       .thenCompose(this::validateState)
@@ -179,7 +179,7 @@ public class CheckpointSyncService {
         return SafeFuture.completedFuture(state);
       });
   }
-  
+
   private SafeFuture<BeaconState> validateState(BeaconState state) {
     // 验证状态
     if (!isValidCheckpoint(state)) {
@@ -201,7 +201,7 @@ public class CheckpointSyncService {
 ```java
 public class SyncTargetSelector {
   private final PeerPool peerPool;
-  
+
   public SyncTarget selectBestTarget() {
     return peerPool.streamPeers()
       .filter(this::isValidSyncPeer)
@@ -209,7 +209,7 @@ public class SyncTargetSelector {
       .map(peer -> new SyncTarget(peer, peer.getHeadSlot()))
       .orElseThrow(() -> new NoValidPeerException());
   }
-  
+
   private boolean isValidSyncPeer(Peer peer) {
     return peer.isConnected()
         && peer.getStatus().isPresent()
@@ -223,13 +223,13 @@ public class SyncTargetSelector {
 
 ## 17.6 与 Prysm 对比
 
-| 维度 | Prysm | Teku |
-|------|-------|------|
-| **同步策略** | Round-Robin | 并行批次 |
-| **批量大小** | 64 blocks | 50 blocks |
-| **并发度** | 多 peer 轮询 | 信号量控制 |
-| **Checkpoint** | ✅ 支持 | ✅ 支持 |
-| **状态追踪** | 状态机 | SyncStateTracker |
+| 维度           | Prysm        | Teku             |
+| -------------- | ------------ | ---------------- |
+| **同步策略**   | Round-Robin  | 并行批次         |
+| **批量大小**   | 64 blocks    | 50 blocks        |
+| **并发度**     | 多 peer 轮询 | 信号量控制       |
+| **Checkpoint** | 支持         | 支持             |
+| **状态追踪**   | 状态机       | SyncStateTracker |
 
 ---
 
@@ -241,16 +241,16 @@ public class SyncTargetSelector {
 public class BatchOptimizer {
   public int calculateOptimalBatchSize(
       NetworkConditions conditions) {
-    
+
     int baseBatchSize = 50;
-    
+
     // 根据网络条件调整
     if (conditions.getLatency().toMillis() < 50) {
       return baseBatchSize * 2; // 低延迟，增大批次
     } else if (conditions.getLatency().toMillis() > 200) {
       return baseBatchSize / 2; // 高延迟，减小批次
     }
-    
+
     return baseBatchSize;
   }
 }
@@ -263,7 +263,7 @@ public class SyncMetrics {
   private final Gauge syncProgress;
   private final Counter blocksImported;
   private final Timer syncDuration;
-  
+
   public void recordSyncProgress(UInt64 currentSlot, UInt64 targetSlot) {
     double progress = currentSlot.doubleValue() / targetSlot.doubleValue();
     syncProgress.set(progress);
@@ -275,11 +275,11 @@ public class SyncMetrics {
 
 ## 17.8 本章总结
 
-✅ Teku 支持三种初始同步模式  
-✅ Forward Sync 采用并行批次处理  
-✅ Checkpoint Sync 快速启动  
-✅ 完善的 peer 选择与状态追踪  
-✅ 性能优化与监控指标
+- Teku 支持三种初始同步模式
+- Forward Sync 采用并行批次处理
+- Checkpoint Sync 快速启动
+- 完善的 peer 选择与状态追踪
+- 性能优化与监控指标
 
 **下一章**: Full Sync 详细实现
 

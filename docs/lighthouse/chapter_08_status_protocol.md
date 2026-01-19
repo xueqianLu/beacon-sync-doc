@@ -68,7 +68,7 @@ router 负责把网络事件分发，同时也会主动触发对某些 peer 发�
 - `beacon_node/network/src/router.rs`
   - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/router.rs
 
-你可以从 router 里找到：
+在 router 侧可定位到：
 
 - 发送 Status（例如 `send_status(...)`）
 - 收到 Status request/response 的分支处理（把消息交给 processor 进一步处理）

@@ -1,23 +1,23 @@
-# 第4章 libp2p网络栈
+# 第 4 章 libp2p 网络栈
 
-## 4.1 libp2p架构概述
+## 4.1 libp2p 架构概述
 
-### 4.1.1 为什么选择libp2p
+### 4.1.1 为什么选择 libp2p
 
-libp2p是一个模块化的P2P网络栈，被以太坊共识层采用：
+libp2p 是一个模块化的 P2P 网络栈，被以太坊共识层采用：
 
 ```
 优势：
-✅ 模块化设计：可组合的协议栈
-✅ 多传输支持：TCP、QUIC、WebSocket
-✅ 连接复用：mplex/yamux
-✅ 安全通信：Noise加密
-✅ 内容路由：DHT支持
-✅ 发布订阅：Gossipsub协议
-✅ NAT穿透：AutoNAT、Circuit Relay
+- 模块化设计：可组合的协议栈
+- 多传输支持：TCP、QUIC、WebSocket
+- 连接复用：mplex/yamux
+- 安全通信：Noise加密
+- 内容路由：DHT支持
+- 发布订阅：Gossipsub协议
+- NAT穿透：AutoNAT、Circuit Relay
 ```
 
-### 4.1.2 libp2p核心组件
+### 4.1.2 libp2p 核心组件
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -59,9 +59,9 @@ libp2p是一个模块化的P2P网络栈，被以太坊共识层采用：
 
 ---
 
-## 4.2 Prysm的libp2p实现
+## 4.2 Prysm 的 libp2p 实现
 
-### 4.2.1 P2P Service结构
+### 4.2.1 P2P Service 结构
 
 ```go
 // 来自prysm/beacon-chain/p2p/service.go
@@ -73,29 +73,29 @@ type Service struct {
     host                     host.Host          // libp2p host
     pubsub                   *pubsub.PubSub     // Gossipsub实例
     peers                    *peers.Status       // Peer管理器
-    
+
     // Discovery
     dv5Listener              ListenerRebooter    // discv5节点发现
-    
+
     // 网络配置
     privKey                  *ecdsa.PrivateKey   // 节点私钥
     addrFilter               *multiaddr.Filters  // 地址过滤器
     ipLimiter                *leakybucket.Collector // IP限速器
-    
+
     // 元数据
     metaData                 metadata.Metadata   // 节点元数据
     genesisTime              time.Time           // 创世时间
     genesisValidatorsRoot    []byte              // 创世验证者根
-    
+
     // Gossipsub主题
     joinedTopics             map[string]*pubsub.Topic
     joinedTopicsLock         sync.RWMutex
-    
+
     // Subnet相关
     subnetsLock              map[uint64]*sync.RWMutex
     activeValidatorCount     uint64
     custodyInfo              *custodyInfo
-    
+
     // 状态
     started                  bool
     isPreGenesis             bool
@@ -112,26 +112,26 @@ type Config struct {
     HostAddress     string
     HostDNS         string
     LocalIP         string
-    
+
     // 端口配置
     TCPPort         uint
     UDPPort         uint
     QUICPort        uint
-    
+
     // Peer限制
     MaxPeers        uint
     MinimumPeers    uint
-    
+
     // 连接管理
     StaticPeers     []string
     Discv5BootStrapAddrs []string
     RelayNodeAddr   string
-    
+
     // Discovery配置
     NoDiscovery     bool
     DiscoveryDir    string
     PingInterval    time.Duration
-    
+
     // 其他
     DB              db.ReadOnlyDatabase
     ClockWaiter     startup.ClockWaiter
@@ -145,37 +145,37 @@ type Config struct {
 // 来自prysm/beacon-chain/p2p/service.go
 func NewService(ctx context.Context, cfg *Config) (*Service, error) {
     ctx, cancel := context.WithCancel(ctx)
-    
+
     // 1. 验证配置
     validateConfig(cfg)
-    
+
     // 2. 生成或加载私钥
     privKey, err := privKey(cfg)
     if err != nil {
         return nil, errors.Wrap(err, "failed to generate p2p private key")
     }
-    
+
     // 3. 加载元数据
     metaData, err := metaDataFromDB(ctx, cfg.DB)
     if err != nil {
         log.WithError(err).Error("Failed to create peer metadata")
         return nil, err
     }
-    
+
     // 4. 配置地址过滤器
     addrFilter, err := configureFilter(cfg)
     if err != nil {
         return nil, err
     }
-    
+
     // 5. 创建IP限速器
     ipLimiter := leakybucket.NewCollector(
-        ipLimit, 
-        ipBurst, 
-        30*time.Second, 
+        ipLimit,
+        ipBurst,
+        30*time.Second,
         true, // deleteEmptyBuckets
     )
-    
+
     // 6. 创建service实例
     s := &Service{
         ctx:                   ctx,
@@ -190,34 +190,34 @@ func NewService(ctx context.Context, cfg *Config) (*Service, error) {
         subnetsLock:           make(map[uint64]*sync.RWMutex),
         peerDisconnectionTime: cache.New(1*time.Second, 1*time.Minute),
     }
-    
+
     // 7. 构建libp2p选项
     ipAddr := prysmnetwork.IPAddr()
     opts, err := s.buildOptions(ipAddr, s.privKey)
     if err != nil {
         return nil, errors.Wrap(err, "failed to build p2p options")
     }
-    
+
     // 8. 配置mplex超时
     configureMplex()
-    
+
     // 9. 创建libp2p host
     h, err := libp2p.New(opts...)
     if err != nil {
         return nil, errors.Wrap(err, "failed to create p2p host")
     }
     s.host = h
-    
+
     // 10. 初始化Gossipsub
     psOpts := s.pubsubOptions()
     setPubSubParameters()
-    
+
     gs, err := pubsub.NewGossipSub(s.ctx, s.host, psOpts...)
     if err != nil {
         return nil, errors.Wrap(err, "failed to create p2p pubsub")
     }
     s.pubsub = gs
-    
+
     // 11. 初始化peer管理器
     s.peers = peers.NewStatus(ctx, &peers.StatusConfig{
         PeerLimit:             int(s.cfg.MaxPeers),
@@ -229,19 +229,19 @@ func NewService(ctx context.Context, cfg *Config) (*Service, error) {
             },
         },
     })
-    
+
     // 12. 初始化数据映射
     types.InitializeDataMaps()
-    
+
     return s, nil
 }
 ```
 
 ---
 
-## 4.3 libp2p Options构建
+## 4.3 libp2p Options 构建
 
-### 4.3.1 buildOptions方法
+### 4.3.1 buildOptions 方法
 
 ```go
 // 来自prysm/beacon-chain/p2p/options.go
@@ -251,57 +251,57 @@ func (s *Service) buildOptions(ip net.IP, priKey *ecdsa.PrivateKey) ([]libp2p.Op
     if err != nil {
         return nil, errors.Wrap(err, "failed to build TCP multiaddr")
     }
-    
+
     options := []libp2p.Option{
         // 1. 私钥
         privKeyOption(priKey),
-        
+
         // 2. 监听地址
         libp2p.ListenAddrs(listen),
-        
+
         // 3. 用户代理
         libp2p.UserAgent(version.BuildData()),
-        
+
         // 4. 连接管理器
         libp2p.ConnectionManager(s.connectionManager()),
-        
+
         // 5. 传输协议
         libp2p.Transport(tcp.NewTCPTransport),
-        
+
         // 6. 多路复用
         libp2p.Muxer("/mplex/6.7.0", mplex.DefaultTransport),
-        
+
         // 7. 安全层
         libp2p.Security(noise.ID, noise.New),
-        
+
         // 8. NAT穿透
         libp2p.NATPortMap(),
-        
+
         // 9. Connection Gater
         libp2p.ConnectionGater(s),
-        
+
         // 10. 带宽报告
         libp2p.BandwidthReporter(s.bandwidthCounter),
     }
-    
+
     // 添加QUIC支持（如果启用）
     if features.Get().EnableQUIC {
         quicListen, err := multiAddressBuilderWithProtocol(ip, quic, cfg.QUICPort)
         if err != nil {
             return nil, errors.Wrap(err, "failed to build QUIC multiaddr")
         }
-        options = append(options, 
+        options = append(options,
             libp2p.ListenAddrs(quicListen),
             libp2p.Transport(libp2pquic.NewTransport),
         )
     }
-    
+
     // 如果配置了HostAddress，添加外部地址公告
     if cfg.HostAddress != "" {
         options = append(options, libp2p.AddrsFactory(
             func([]ma.Multiaddr) []ma.Multiaddr {
                 external, err := multiAddressBuilder(
-                    net.ParseIP(cfg.HostAddress), 
+                    net.ParseIP(cfg.HostAddress),
                     cfg.TCPPort,
                 )
                 if err != nil {
@@ -312,7 +312,7 @@ func (s *Service) buildOptions(ip net.IP, priKey *ecdsa.PrivateKey) ([]libp2p.Op
             },
         ))
     }
-    
+
     return options, nil
 }
 ```
@@ -325,18 +325,18 @@ func (s *Service) connectionManager() *connmgr.BasicConnMgr {
     lowWater := int(s.cfg.MaxPeers) * 2 / 3
     highWater := int(s.cfg.MaxPeers)
     gracePeriod := 30 * time.Second
-    
+
     mgr, err := connmgr.NewConnManager(
         lowWater,       // 低水位
         highWater,      // 高水位
         connmgr.WithGracePeriod(gracePeriod),
     )
-    
+
     if err != nil {
         log.WithError(err).Error("Failed to create connection manager")
         return nil
     }
-    
+
     return mgr
 }
 ```
@@ -345,9 +345,9 @@ func (s *Service) connectionManager() *connmgr.BasicConnMgr {
 
 ## 4.4 传输层协议
 
-### 4.4.1 TCP传输
+### 4.4.1 TCP 传输
 
-TCP是默认且最广泛使用的传输协议：
+TCP 是默认且最广泛使用的传输协议：
 
 ```go
 // TCP配置
@@ -361,28 +361,29 @@ libp2p.Transport(tcp.NewTCPTransport)
 ```
 
 **特点**:
+
 - ✅ 可靠传输
 - ✅ 广泛支持
 - ✅ 经过充分测试
 - ❌ 需要建立连接
 - ❌ 头部开销较大
 
-### 4.4.2 QUIC传输
+### 4.4.2 QUIC 传输
 
-QUIC是基于UDP的现代传输协议：
+QUIC 是基于 UDP 的现代传输协议：
 
 ```go
 // 来自prysm/beacon-chain/p2p/options.go
 if features.Get().EnableQUIC {
     quicListen, err := multiAddressBuilderWithProtocol(
-        ip, 
-        quic, 
+        ip,
+        quic,
         cfg.QUICPort,
     )
     if err != nil {
         return nil, errors.Wrap(err, "failed to build QUIC multiaddr")
     }
-    
+
     options = append(options,
         // 监听QUIC端口
         libp2p.ListenAddrs(quicListen),
@@ -392,14 +393,16 @@ if features.Get().EnableQUIC {
 }
 ```
 
-**QUIC优势**:
-- ✅ 0-RTT连接建立
+**QUIC 优势**:
+
+- ✅ 0-RTT 连接建立
 - ✅ 内置加密(TLS 1.3)
 - ✅ 多路复用无阻塞
 - ✅ 连接迁移支持
 - ✅ 更好的拥塞控制
 
-**Multiaddr格式**:
+**Multiaddr 格式**:
+
 ```
 TCP:  /ip4/192.168.1.1/tcp/9000/p2p/16Uiu2HAm...
 QUIC: /ip4/192.168.1.1/udp/9001/quic/p2p/16Uiu2HAm...
@@ -431,7 +434,7 @@ func multiAddressBuilderWithProtocol(
     if ipAddr.To4() == nil {
         ipVersion = "ip6"
     }
-    
+
     // 构建协议字符串
     var protoStr string
     switch protocol {
@@ -444,7 +447,7 @@ func multiAddressBuilderWithProtocol(
     default:
         return nil, errors.New("invalid protocol")
     }
-    
+
     // 构建multiaddr
     addrStr := fmt.Sprintf("/%s/%s/%s/%d", ipVersion, ipAddr, protoStr, port)
     return ma.NewMultiaddr(addrStr)
@@ -460,7 +463,7 @@ func multiAddressBuilderWithID(
     if err != nil {
         return nil, err
     }
-    
+
     // 添加peer ID
     return addr.Encapsulate(ma.StringCast("/p2p/" + id.String()))
 }
@@ -472,7 +475,7 @@ func multiAddressBuilderWithID(
 
 ### 4.5.1 为什么需要多路复用
 
-多路复用允许在单个连接上并发多个独立的stream：
+多路复用允许在单个连接上并发多个独立的 stream：
 
 ```
 单连接多流：
@@ -486,13 +489,13 @@ func multiAddressBuilderWithID(
 └─────────────────────────────────┘
 
 优势：
-✅ 减少连接数
-✅ 避免TCP慢启动
-✅ 并发请求不阻塞
-✅ 降低延迟
+- 减少连接数
+- 避免TCP慢启动
+- 并发请求不阻塞
+- 降低延迟
 ```
 
-### 4.5.2 mplex配置
+### 4.5.2 mplex 配置
 
 ```go
 // 来自prysm/beacon-chain/p2p/options.go
@@ -514,23 +517,25 @@ options := []libp2p.Option{
 }
 ```
 
-**mplex参数**:
+**mplex 参数**:
+
 ```go
 type MplexTransport struct {
     MaxMessageSize int  // 单个消息最大大小
 }
 ```
 
-### 4.5.3 yamux支持
+### 4.5.3 yamux 支持
 
-yamux是另一个流行的多路复用协议：
+yamux 是另一个流行的多路复用协议：
 
 ```go
 // 可选：同时支持yamux
 libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport)
 ```
 
-**mplex vs yamux对比**:
+**mplex vs yamux 对比**:
+
 ```
 特性            mplex           yamux
 ─────────────────────────────────────────
@@ -546,9 +551,9 @@ libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport)
 
 ## 4.6 安全层(Noise Protocol)
 
-### 4.6.1 Noise加密
+### 4.6.1 Noise 加密
 
-Noise是libp2p采用的安全传输协议：
+Noise 是 libp2p 采用的安全传输协议：
 
 ```go
 // 来自prysm/beacon-chain/p2p/options.go
@@ -563,7 +568,8 @@ options := []libp2p.Option{
 }
 ```
 
-**Noise特点**:
+**Noise 特点**:
+
 - ✅ 轻量级握手
 - ✅ 前向安全
 - ✅ 相互认证
@@ -574,7 +580,7 @@ options := []libp2p.Option{
 
 ```
 Noise XX handshake:
-                                
+
 Initiator                    Responder
     │                            │
     ├──── Ephemeral Key ────────>│
@@ -584,7 +590,7 @@ Initiator                    Responder
     ├──── Auth + Payload ───────>│
     │                            │
     └────────────────────────────┘
-    
+
 每个消息都包含DH交换的结果，
 最终双方都验证了对方的静态公钥
 ```
@@ -604,7 +610,7 @@ Initiator                    Responder
 
 ### 4.7.1 连接守门人角色
 
-Connection Gater控制哪些连接可以被接受：
+Connection Gater 控制哪些连接可以被接受：
 
 ```go
 // 来自prysm/beacon-chain/p2p/connection_gater.go
@@ -614,12 +620,12 @@ func (s *Service) InterceptPeerDial(p peer.ID) bool {
     if s.peers.IsBad(p) != nil {
         return false
     }
-    
+
     // 2. 检查是否超过peer限制
     if s.isPeerAtLimit(all) {
         return false
     }
-    
+
     return true
 }
 
@@ -628,17 +634,17 @@ func (s *Service) InterceptAddrDial(p peer.ID, addr ma.Multiaddr) bool {
     if !s.addrFilter.AddrBlocked(addr) {
         return false
     }
-    
+
     // 2. 检查IP限速
     ip, err := manet.ToIP(addr)
     if err != nil {
         return false
     }
-    
+
     if !s.ipLimiter.Add(ip.String(), 1) {
         return false
     }
-    
+
     return true
 }
 
@@ -648,7 +654,7 @@ func (s *Service) InterceptAccept(addrs network.ConnMultiaddrs) bool {
 }
 ```
 
-### 4.7.2 IP限速
+### 4.7.2 IP 限速
 
 ```go
 // 使用leaky bucket算法限制每个IP的连接速率
@@ -669,20 +675,20 @@ ipLimiter := leakybucket.NewCollector(
 
 ## 4.8 小结
 
-本章介绍了Prysm使用的libp2p网络栈：
+本章介绍了 Prysm 使用的 libp2p 网络栈：
 
-✅ **架构设计**: 模块化、可扩展的P2P框架
-✅ **传输层**: TCP主导，QUIC作为高性能选项
-✅ **多路复用**: mplex实现单连接多流
-✅ **安全通信**: Noise协议提供加密和认证
-✅ **连接管理**: Connection Gater和限速保护
-✅ **配置灵活**: 丰富的选项支持各种部署场景
+- **架构设计**: 模块化、可扩展的 P2P 框架
+- **传输层**: TCP 主导，QUIC 作为高性能选项
+- **多路复用**: mplex 实现单连接多流
+- **安全通信**: Noise 协议提供加密和认证
+- **连接管理**: Connection Gater 和限速保护
+- **配置灵活**: 丰富的选项支持各种部署场景
 
-libp2p为Beacon节点提供了坚实的网络基础，下一章将介绍协议协商机制。
+libp2p 为 Beacon 节点提供了坚实的网络基础，下一章将介绍协议协商机制。
 
 ---
 
-**下一章预告**: 第5章将详细讲解multistream-select协议协商机制。
+**下一章预告**: 第 5 章将详细讲解 multistream-select 协议协商机制。
 
 ---
 
@@ -690,7 +696,7 @@ libp2p为Beacon节点提供了坚实的网络基础，下一章将介绍协议�
 
 ### 4.9.1 为同步提供的核心能力
 
-libp2p为同步模块提供了关键的网络能力：
+libp2p 为同步模块提供了关键的网络能力：
 
 ```go
 // Sync模块依赖的P2P能力
@@ -699,15 +705,15 @@ type SyncDependencies struct {
     GetConnectedPeers()    // Initial sync选择peers
     GetPeerStatus()        // 检查peer的chain状态
     ScorePeer()            // 根据响应质量评分
-    
+
     // 2. 请求/响应
     SendRPCRequest()       // 发送BlocksByRange等请求
     HandleRPCResponse()    // 处理返回的blocks
-    
+
     // 3. 实时消息
     SubscribeToTopic()     // 订阅beacon_block主题
     ReceiveGossipMsg()     // 接收实时区块
-    
+
     // 4. 流管理
     OpenStream()           // 打开与peer的stream
     CloseStream()          // 关闭stream
@@ -715,7 +721,7 @@ type SyncDependencies struct {
 }
 ```
 
-### 4.9.2 同步场景下的libp2p使用
+### 4.9.2 同步场景下的 libp2p 使用
 
 ```go
 // Initial Sync使用示例
@@ -725,13 +731,13 @@ func (s *InitialSync) syncFromPeers() {
         // libp2p确保不会超过连接限制
         s.p2p.RequestBlocks(peer, startSlot, count)
     }
-    
+
     // 2. 使用mplex并发多个请求到同一peer
     // 同时请求blocks、blobs和attestations
     go s.p2p.Send(peer, blocksReq)
     go s.p2p.Send(peer, blobsReq)
     // mplex确保两个请求不会互相阻塞
-    
+
     // 3. 使用Noise确保数据安全
     // 所有同步数据都通过加密通道传输
 }
@@ -740,11 +746,11 @@ func (s *InitialSync) syncFromPeers() {
 func (s *RegularSync) receiveBlocks() {
     // 1. 通过Gossipsub接收实时区块
     s.p2p.Subscribe("/eth2/beacon_block", handler)
-    
+
     // 2. 当检测到父块缺失时
     // 使用Req/Resp快速获取
     missingBlock := s.p2p.Send(peer, BlocksByRootReq)
-    
+
     // 3. libp2p的Connection Gater保护
     // 恶意peer会被自动阻止
 }
@@ -757,10 +763,10 @@ func (s *RegularSync) receiveBlocks() {
 const (
     // TCP Keepalive避免连接超时
     TCPKeepAlive = 15 * time.Second
-    
+
     // QUIC的0-RTT减少延迟
     // 特别适合频繁请求的initial sync
-    
+
     // mplex的大消息支持
     // 单个请求可以传输大批量blocks
     MaxMplexMessageSize = 10 * 1024 * 1024  // 10MB
@@ -781,7 +787,7 @@ func (s *Service) batchSync() {
 }
 ```
 
-### 4.9.4 libp2p在不同同步阶段的作用
+### 4.9.4 libp2p 在不同同步阶段的作用
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -817,4 +823,4 @@ func (s *Service) batchSync() {
 
 ---
 
-**更新小结**: libp2p不仅提供网络基础设施，更是同步模块的强大后盾，使其能高效、安全地完成各种同步任务。
+**更新小结**: libp2p 不仅提供网络基础设施，更是同步模块的强大后盾，使其能高效、安全地完成各种同步任务。

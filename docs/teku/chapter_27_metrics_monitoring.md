@@ -74,7 +74,7 @@ groups:
           severity: warning
         annotations:
           summary: "Node is behind"
-          
+
       - alert: SyncStalled
         expr: rate(teku_blocks_processed_total[5m]) == 0
         for: 2m
@@ -102,12 +102,12 @@ LOG.info("Sync progress",
 
 ## 27.5 与 Prysm 对比
 
-| 维度 | Prysm | Teku |
-|------|-------|------|
+| 维度     | Prysm      | Teku       |
+| -------- | ---------- | ---------- |
 | 指标格式 | Prometheus | Prometheus |
-| 仪表盘 | Grafana | Grafana |
-| 日志 | logrus | log4j |
-| 结构化 | ✅ | ✅ |
+| 仪表盘   | Grafana    | Grafana    |
+| 日志     | logrus     | log4j      |
+| 结构化   | 是         | 是         |
 
 ---
 

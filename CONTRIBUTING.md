@@ -1,23 +1,26 @@
 # 贡献指南
 
-感谢你考虑为 Beacon Node 同步模块文档做出贡献！
+本文档说明如何为 Beacon Node 同步模块文档贡献内容。
 
-## 🎯 贡献方式
+## 贡献方式
 
 ### 1. 改进文档内容
 
 #### 修正错误
+
 - 技术错误
 - 代码错误
 - 错别字和语法错误
 
 #### 补充内容
+
 - 添加更多代码示例
 - 增加流程图和架构图
 - 补充实践案例
 - 添加性能测试数据
 
 #### 优化结构
+
 - 改进章节组织
 - 优化阅读体验
 - 增强导航链接
@@ -73,7 +76,7 @@ git push origin feature/your-feature-name
    - 为什么这么修改
    - 相关的 Issue 编号（如果有）
 
-## 📝 编写规范
+## 编写规范
 
 ### 文档风格
 
@@ -92,7 +95,7 @@ git push origin feature/your-feature-name
 1. 有序列表
 2. 有序列表
 
-**粗体** *斜体* `代码`
+**粗体** _斜体_ `代码`
 
 [链接文字](URL)
 ```
@@ -151,10 +154,10 @@ func example() {
 func Process() {
     // 1. 第一步
     step1()
-    
+
     // 2. 第二步
     step2()
-    
+
     // 3. 第三步
     step3()
 }
@@ -185,7 +188,7 @@ graph TD
 ```
 ````
 
-## 🔍 提交前检查清单
+## 提交前检查清单
 
 - [ ] 代码示例可以运行（或标注为伪代码）
 - [ ] 添加了必要的注释和说明
@@ -195,13 +198,13 @@ graph TD
 - [ ] 更新了相关的目录和索引
 - [ ] 测试了 Markdown 渲染效果
 
-## 📚 参考资源
+## 参考资源
 
 ### 技术参考
 
-- [Prysm文档](https://docs.prylabs.network/)
+- [Prysm 文档](https://docs.prylabs.network/)
 - [Ethereum Consensus Specs](https://github.com/ethereum/consensus-specs)
-- [libp2p规范](https://github.com/libp2p/specs)
+- [libp2p 规范](https://github.com/libp2p/specs)
 
 ### 写作参考
 
@@ -209,38 +212,39 @@ graph TD
 - [Markdown Guide](https://www.markdownguide.org/)
 - [GitHub Flavored Markdown](https://github.github.com/gfm/)
 
-## 🎓 贡献等级
+## 贡献层级（可选）
 
-### 🌱 入门贡献者
+### 入门贡献者
+
 - 修正错别字
 - 修复链接
 - 改进格式
 
-### 🌿 活跃贡献者
+### 活跃贡献者
+
 - 补充代码示例
 - 增加流程图
 - 优化章节结构
 
-### 🌳 核心贡献者
+### 核心贡献者
+
 - 编写新章节
 - 深度技术分析
 - 重大改进提案
 
-## 🏆 贡献者名单
+## 贡献者名单
 
-感谢所有贡献者！你的名字将出现在 [CONTRIBUTORS.md](./CONTRIBUTORS.md)
+贡献者信息见 [CONTRIBUTORS.md](./CONTRIBUTORS.md)。
 
-## 📧 联系方式
+## 联系方式
 
 有任何问题，欢迎通过以下方式联系：
 
 - GitHub Issues
 - Email: your-email@example.com
 
-## 📄 许可证
+## 许可证
 
 贡献内容将采用与项目相同的 MIT 许可证。
 
 ---
-
-再次感谢你的贡献！🎉

@@ -17,10 +17,11 @@ Publisher                     Subscribers
 ```
 
 **Teku 实现特点**:
-- ✅ 基于 libp2p-gossipsub v1.1
-- ✅ 异步事件驱动处理
-- ✅ 完整的消息验证流水线
-- ✅ Peer 评分与惩罚机制
+
+- 基于 libp2p-gossipsub v1.1
+- 异步事件驱动处理
+- 完整的消息验证流水线
+- Peer 评分与惩罚机制
 
 ---
 
@@ -34,15 +35,15 @@ public class Eth2Gossipsub {
   private final Map<String, TopicHandler> topicHandlers;
   private final MessageValidator messageValidator;
   private final PeerScorer peerScorer;
-  
+
   public void subscribe(String topic, TopicHandler handler) {
     topicHandlers.put(topic, handler);
     gossipNetwork.subscribe(topic, this::onMessage);
   }
-  
+
   private void onMessage(String topic, GossipMessage message) {
     TopicHandler handler = topicHandlers.get(topic);
-    
+
     handler.handleMessage(message)
       .thenAccept(result -> {
         if (result == ValidationResult.ACCEPT) {
@@ -76,10 +77,10 @@ public class Eth2Gossipsub {
 public class GossipMessageProcessor {
   private final AsyncRunner asyncRunner;
   private final ValidationPipeline validationPipeline;
-  
+
   public SafeFuture<ValidationResult> processMessage(
       GossipMessage message) {
-    
+
     return SafeFuture.of(() -> {
       // 1. 预验证（快速检查）
       return validationPipeline.preValidate(message);
@@ -88,7 +89,7 @@ public class GossipMessageProcessor {
       if (preResult != ValidationResult.ACCEPT) {
         return SafeFuture.completedFuture(preResult);
       }
-      
+
       // 2. 完整验证（可能较慢）
       return validationPipeline.fullValidate(message);
     })
@@ -105,7 +106,7 @@ public class GossipMessageProcessor {
       return ValidationResult.IGNORE;
     });
   }
-  
+
   private SafeFuture<Void> processValidMessage(GossipMessage message) {
     return asyncRunner.runAsync(() -> {
       // 导入区块/证明等
@@ -135,15 +136,15 @@ public enum ValidationResult {
 public class TopicSubscriptionManager {
   private final GossipNetwork gossipNetwork;
   private final Set<String> activeSubscriptions = new ConcurrentHashSet<>();
-  
+
   public SafeFuture<Void> subscribeToTopic(
       String topic,
       TopicHandler handler) {
-    
+
     if (activeSubscriptions.contains(topic)) {
       return SafeFuture.COMPLETE;
     }
-    
+
     return gossipNetwork.subscribe(topic, message -> {
       return handler.handleMessage(message);
     }).thenAccept(__ -> {
@@ -151,12 +152,12 @@ public class TopicSubscriptionManager {
       LOG.info("Subscribed to topic", kv("topic", topic));
     });
   }
-  
+
   public SafeFuture<Void> unsubscribeFromTopic(String topic) {
     if (!activeSubscriptions.contains(topic)) {
       return SafeFuture.COMPLETE;
     }
-    
+
     return gossipNetwork.unsubscribe(topic)
       .thenAccept(__ -> {
         activeSubscriptions.remove(topic);
@@ -172,22 +173,22 @@ public class TopicSubscriptionManager {
 public class AttestationSubnetSubscriber {
   private static final int ATTESTATION_SUBNET_COUNT = 64;
   private final Random random = new Random();
-  
+
   public void subscribeToRandomSubnets(int count) {
     Set<Integer> selectedSubnets = new HashSet<>();
-    
+
     while (selectedSubnets.size() < count) {
       int subnetId = random.nextInt(ATTESTATION_SUBNET_COUNT);
       selectedSubnets.add(subnetId);
     }
-    
+
     selectedSubnets.forEach(subnetId -> {
       String topic = String.format(
         "/eth2/%s/beacon_attestation_%d/ssz_snappy",
         forkDigest,
         subnetId
       );
-      
+
       subscribeToTopic(topic, attestationHandler);
     });
   }
@@ -203,16 +204,16 @@ public class AttestationSubnetSubscriber {
 ```java
 public class GossipPublisher {
   private final GossipNetwork gossipNetwork;
-  
+
   public SafeFuture<Void> publishBlock(SignedBeaconBlock block) {
     String topic = getBlockTopic();
-    
+
     // 序列化
     Bytes messageData = block.sszSerialize();
-    
+
     // 压缩
     Bytes compressed = SnappyCompressor.compress(messageData);
-    
+
     // 发布
     return gossipNetwork.publish(topic, compressed)
       .thenAccept(__ -> {
@@ -222,7 +223,7 @@ public class GossipPublisher {
         );
       });
   }
-  
+
   private String getBlockTopic() {
     return String.format(
       "/eth2/%s/beacon_block/ssz_snappy",
@@ -237,18 +238,18 @@ public class GossipPublisher {
 ```java
 public class MessageDeduplicator {
   private final Cache<Bytes32, Boolean> seenMessages;
-  
+
   public MessageDeduplicator() {
     this.seenMessages = Caffeine.newBuilder()
       .maximumSize(10000)
       .expireAfterWrite(Duration.ofMinutes(5))
       .build();
   }
-  
+
   public boolean isDuplicate(Bytes32 messageId) {
     return seenMessages.getIfPresent(messageId) != null;
   }
-  
+
   public void markAsSeen(Bytes32 messageId) {
     seenMessages.put(messageId, Boolean.TRUE);
   }
@@ -259,13 +260,13 @@ public class MessageDeduplicator {
 
 ## 11.6 与 Prysm 对比
 
-| 维度 | Prysm | Teku |
-|------|-------|------|
-| **验证模式** | 同步 + 异步 | 完全异步 |
-| **消息处理** | Channel + Worker | EventBus + AsyncRunner |
-| **去重机制** | LRU Cache | Caffeine |
-| **子网订阅** | 静态配置 | 动态调整 |
-| **错误处理** | 返回 error | SafeFuture.exceptionally |
+| 维度         | Prysm            | Teku                     |
+| ------------ | ---------------- | ------------------------ |
+| **验证模式** | 同步 + 异步      | 完全异步                 |
+| **消息处理** | Channel + Worker | EventBus + AsyncRunner   |
+| **去重机制** | LRU Cache        | Caffeine                 |
+| **子网订阅** | 静态配置         | 动态调整                 |
+| **错误处理** | 返回 error       | SafeFuture.exceptionally |
 
 ---
 
@@ -275,22 +276,22 @@ public class MessageDeduplicator {
 
 ```java
 public class BatchMessageValidator {
-  private final List<PendingMessage> pendingMessages = 
+  private final List<PendingMessage> pendingMessages =
     new ArrayList<>();
   private static final int BATCH_SIZE = 32;
-  
+
   public synchronized void addMessage(GossipMessage message) {
     pendingMessages.add(new PendingMessage(message));
-    
+
     if (pendingMessages.size() >= BATCH_SIZE) {
       processBatch();
     }
   }
-  
+
   private void processBatch() {
     List<PendingMessage> batch = new ArrayList<>(pendingMessages);
     pendingMessages.clear();
-    
+
     // 批量 BLS 签名验证
     blsVerifier.verifyBatch(
       batch.stream()
@@ -316,17 +317,17 @@ public enum MessagePriority {
   HIGH(0),      // Block
   MEDIUM(1),    // Aggregate attestation
   LOW(2);       // Individual attestation
-  
+
   private final int value;
 }
 
 public class PriorityMessageQueue {
   private final PriorityBlockingQueue<PrioritizedMessage> queue;
-  
+
   public void enqueue(GossipMessage message, MessagePriority priority) {
     queue.offer(new PrioritizedMessage(message, priority));
   }
-  
+
   public GossipMessage dequeue() throws InterruptedException {
     return queue.take().getMessage();
   }
@@ -343,20 +344,20 @@ public class GossipMetrics {
   private final Counter messagesValidated;
   private final Counter messagesRejected;
   private final Timer validationDuration;
-  
+
   public void recordMessage(
       String topic,
       ValidationResult result,
       Duration duration) {
-    
+
     messagesReceived.increment();
-    
+
     if (result == ValidationResult.ACCEPT) {
       messagesValidated.increment();
     } else if (result == ValidationResult.REJECT) {
       messagesRejected.increment();
     }
-    
+
     validationDuration.record(duration);
   }
 }
@@ -366,11 +367,11 @@ public class GossipMetrics {
 
 ## 11.9 本章总结
 
-✅ Teku Gossipsub 基于 libp2p-gossipsub v1.1  
-✅ 完全异步的消息处理流水线  
-✅ 动态 topic 订阅与管理  
-✅ 消息去重与批量验证优化  
-✅ 完整的监控指标集成
+- Teku Gossipsub 基于 libp2p-gossipsub v1.1
+- 完全异步的消息处理流水线
+- 动态 topic 订阅与管理
+- 消息去重与批量验证优化
+- 完整的监控指标集成
 
 **下一章**: BeaconBlockTopicHandler 详细实现
 

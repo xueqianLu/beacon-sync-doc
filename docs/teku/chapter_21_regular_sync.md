@@ -15,26 +15,26 @@ public class SyncMode {
     REGULAR_SYNC,    // 实时跟踪最新区块
     CHECKPOINT_SYNC  // 从检查点启动
   }
-  
+
   private volatile Mode currentMode = Mode.INITIAL_SYNC;
-  
+
   public void transitionToRegularSync() {
     if (isInitialSyncComplete()) {
       currentMode = Mode.REGULAR_SYNC;
       LOG.info("Transitioned to regular sync");
-      
+
       // 停止批量同步
       initialSyncService.stop();
-      
+
       // 启动实时同步
       regularSyncService.start();
     }
   }
-  
+
   private boolean isInitialSyncComplete() {
     UInt64 headSlot = chainData.getHeadSlot();
     UInt64 currentSlot = chainData.getCurrentSlot();
-    
+
     // Head 在当前 slot 的 1 个 epoch 内
     return currentSlot.minus(headSlot)
       .isLessThan(UInt64.valueOf(SLOTS_PER_EPOCH));
@@ -56,56 +56,56 @@ public class RegularSyncService {
   private final BlockImporter blockImporter;
   private final FetchRecentBlocksService recentBlocksFetcher;
   private final RecentChainData chainData;
-  
+
   private final AtomicBoolean isRunning = new AtomicBoolean(false);
-  
+
   public void start() {
     if (!isRunning.compareAndSet(false, true)) {
       LOG.warn("Regular sync already running");
       return;
     }
-    
+
     LOG.info("Starting regular sync");
-    
+
     // 1. 订阅 Gossipsub 主题
     subscribeToGossipTopics();
-    
+
     // 2. 启动定期检查
     startPeriodicHeadCheck();
-    
+
     // 3. 处理积压的区块
     processBacklog();
   }
-  
+
   public void stop() {
     if (isRunning.compareAndSet(true, false)) {
       LOG.info("Stopping regular sync");
       unsubscribeFromGossipTopics();
     }
   }
-  
+
   private void subscribeToGossipTopics() {
     // 订阅区块主题
     gossipNetwork.subscribe(
       GossipTopics.BEACON_BLOCK,
       this::onBeaconBlock
     );
-    
+
     // 订阅 attestation 主题
     gossipNetwork.subscribe(
       GossipTopics.BEACON_AGGREGATE_AND_PROOF,
       this::onAggregateAttestation
     );
   }
-  
+
   private SafeFuture<Void> onBeaconBlock(
       SignedBeaconBlock block) {
-    
+
     LOG.debug("Received gossip block",
       kv("slot", block.getSlot()),
       kv("root", block.getRoot())
     );
-    
+
     return blockImporter.importBlock(block)
       .thenAccept(result -> {
         if (result.isSuccessful()) {
@@ -128,11 +128,11 @@ public class RegularSyncService {
 
 ```java
 public class HeadTracker {
-  private static final Duration HEAD_CHECK_INTERVAL = 
+  private static final Duration HEAD_CHECK_INTERVAL =
     Duration.ofSeconds(12);
-  
+
   private final ScheduledExecutorService scheduler;
-  
+
   public void startTracking() {
     scheduler.scheduleAtFixedRate(
       this::checkHead,
@@ -141,32 +141,32 @@ public class HeadTracker {
       TimeUnit.SECONDS
     );
   }
-  
+
   private void checkHead() {
     UInt64 localHead = chainData.getHeadSlot();
     UInt64 currentSlot = chainData.getCurrentSlot();
-    
+
     // 检查是否落后
     if (isFallingBehind(localHead, currentSlot)) {
       LOG.warn("Node falling behind",
         kv("localHead", localHead),
         kv("currentSlot", currentSlot)
       );
-      
+
       triggerCatchUp(localHead, currentSlot);
     }
-    
+
     // 检查是否需要请求父块
     if (hasMissingParents()) {
       fetchMissingParents();
     }
   }
-  
+
   private boolean isFallingBehind(UInt64 localHead, UInt64 currentSlot) {
     return currentSlot.minus(localHead)
       .isGreaterThan(UInt64.valueOf(SLOTS_PER_EPOCH));
   }
-  
+
   private void triggerCatchUp(UInt64 from, UInt64 to) {
     // 触发批量同步来追赶
     forwardSyncService.syncRange(from, to);
@@ -188,28 +188,28 @@ public class SyncStateMachine {
     OPTIMISTIC,   // 乐观同步
     BEHIND        // 落后
   }
-  
+
   private volatile State currentState = State.SYNCING;
-  
+
   public void updateState() {
     State newState = calculateState();
-    
+
     if (newState != currentState) {
       LOG.info("Sync state transition",
         kv("from", currentState),
         kv("to", newState)
       );
-      
+
       currentState = newState;
       notifyListeners(newState);
     }
   }
-  
+
   private State calculateState() {
     UInt64 headSlot = chainData.getHeadSlot();
     UInt64 currentSlot = chainData.getCurrentSlot();
     UInt64 lag = currentSlot.minus(headSlot);
-    
+
     if (lag.isZero()) {
       return State.IN_SYNC;
     } else if (lag.isLessThan(SYNC_THRESHOLD)) {
@@ -222,7 +222,7 @@ public class SyncStateMachine {
       return State.SYNCING;
     }
   }
-  
+
   private void notifyListeners(State newState) {
     eventBus.post(new SyncStateChangedEvent(newState));
   }
@@ -261,21 +261,22 @@ Gossip Block Received
 
 ## 21.6 与 Prysm 对比
 
-| 维度 | Prysm | Teku |
-|------|-------|------|
-| 同步判断 | Head slot vs Current slot | 同样 |
-| Gossip 订阅 | BeaconBlockSubscriber | GossipNetwork.subscribe |
-| Head 检查 | 定时任务 | ScheduledExecutorService |
-| 状态机 | 4 状态 | 4 状态 |
-| 落后处理 | 自动切换 | triggerCatchUp |
-| 事件通知 | Channel | EventBus |
+| 维度        | Prysm                     | Teku                     |
+| ----------- | ------------------------- | ------------------------ |
+| 同步判断    | Head slot vs Current slot | 同样                     |
+| Gossip 订阅 | BeaconBlockSubscriber     | GossipNetwork.subscribe  |
+| Head 检查   | 定时任务                  | ScheduledExecutorService |
+| 状态机      | 4 状态                    | 4 状态                   |
+| 落后处理    | 自动切换                  | triggerCatchUp           |
+| 事件通知    | Channel                   | EventBus                 |
 
 **Prysm 代码**:
+
 ```go
 func (s *Service) regularSync() {
   ticker := time.NewTicker(12 * time.Second)
   defer ticker.Stop()
-  
+
   for {
     select {
     case <-ticker.C:
@@ -325,10 +326,10 @@ Histogram blockImportTime = Histogram.build()
 
 ```java
 public void checkAndTransition() {
-  if (currentMode == Mode.INITIAL_SYNC && 
+  if (currentMode == Mode.INITIAL_SYNC &&
       isReadyForRegularSync()) {
     transitionToRegularSync();
-  } else if (currentMode == Mode.REGULAR_SYNC && 
+  } else if (currentMode == Mode.REGULAR_SYNC &&
              isFallingBehind()) {
     transitionToInitialSync();
   }
@@ -341,13 +342,13 @@ public void checkAndTransition() {
 private void transitionToRegularSync() {
   // 1. 等待当前批次完成
   initialSyncService.waitForCompletion();
-  
+
   // 2. 切换模式
   currentMode = Mode.REGULAR_SYNC;
-  
+
   // 3. 启动 Regular Sync
   regularSyncService.start();
-  
+
   // 4. 通知监听器
   eventBus.post(new SyncModeChangedEvent(Mode.REGULAR_SYNC));
 }
@@ -359,10 +360,10 @@ private void transitionToRegularSync() {
 scheduler.scheduleAtFixedRate(() -> {
   State state = syncStateMachine.getState();
   UInt64 lag = calculateHeadLag();
-  
+
   syncStatus.set(state.ordinal());
   headLag.set(lag.longValue());
-  
+
   if (state == State.BEHIND) {
     LOG.warn("Node is behind", kv("lag", lag));
   }
@@ -374,17 +375,19 @@ scheduler.scheduleAtFixedRate(() -> {
 ## 21.9 总结
 
 **Regular Sync 核心要点**:
-1. ✅ 实时跟踪：通过 Gossipsub 接收最新区块
-2. ✅ 状态管理：4 种同步状态（SYNCING/IN_SYNC/OPTIMISTIC/BEHIND）
-3. ✅ 自动切换：根据 head lag 自动调整同步模式
-4. ✅ 父块请求：检测并填补缺失的父块
-5. ✅ 性能监控：完善的指标和告警
+
+1. 实时跟踪：通过 Gossipsub 接收最新区块
+2. 状态管理：4 种同步状态（SYNCING/IN_SYNC/OPTIMISTIC/BEHIND）
+3. 自动切换：根据 head lag 自动调整同步模式
+4. 父块请求：检测并填补缺失的父块
+5. 性能监控：完善的指标和告警
 
 **Teku 设计特点**:
-- 🎯 **EventBus 解耦**: 状态变化事件驱动
-- 🎯 **异步处理**: SafeFuture 链式调用
-- 🎯 **资源优化**: 切换模式时释放资源
-- 🎯 **可观测性**: 详细的监控指标
+
+- **EventBus 解耦**: 状态变化事件驱动
+- **异步处理**: SafeFuture 链式调用
+- **资源优化**: 切换模式时释放资源
+- **可观测性**: 详细的监控指标
 
 **下一章预告**: 第 22 章将详细介绍区块处理管道的实现。
 

@@ -34,7 +34,7 @@ Lighthouse 的关键抽象是：
 - router 入口：
   - https://github.com/sigp/lighthouse/blob/v8.0.1/beacon_node/network/src/router.rs
 
-你可以把它理解为：
+可将其概括为：
 
 > libp2p 的 SwarmEvent →（lighthouse_network 归一化）→ NetworkEvent →（router 分发）→ 同步/链逻辑
 
